@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkHop</title>
+  <link rel="stylesheet" href="Login.css" />
+</head>
+<body>
+  <main class="layout">
+    <section class="showcase">
+      <p class="brand">WorkHop</p>
+      <p class="tag">
+        Connect nearby businesses with students for quick, short-duration jobs.
+      </p>
+      <div class="badge">Festival Rush Ready </div>
+      <ul class="points">
+        <li>
+          <b>Business posts jobs in minutes</b>
+          <span>Move items, store support, customer assistance.</span>
+        </li>
+        <li>
+          <b>Students discover local tasks fast</b>
+          <span>Flexible earning with simple apply flow.</span>
+        </li>
+        <li>
+          <b>Built for quick hiring decisions</b>
+          <span>Cleaner process, less time-to-hire.</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="form-wrap">
+      <h1>Welcome back</h1>
+      <p class="sub">Login to continue your WorkHop demo flow.</p>
+
+      <form id="loginForm">
+        <div class="role-switch" aria-label="Choose role">
+          <button type="button" class="active" data-role="student">Student</button>
+          <button type="button" data-role="business">Business</button>
+        </div>
+
+        <input id="role" type="hidden" value="student" />
+
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" required />
+
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Enter your password" required />
+
+        <div class="row">
+          <label style="margin:0; font-weight:500; color:#6b7280;">
+            <input type="checkbox" style="width:auto; margin:0 6px 0 0;" />
+            Remember me
+          </label>
+          <a href="#" aria-label="Forgot password">Forgot password?</a>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Sign in</button>
+        <button class="btn btn-ghost" type="button">Continue with Google</button>
+        <p class="status" id="status"></p>
+      </form>
+
+      <p class="foot">
+        New here?
+        <a href="#" aria-label="Create account">Create account</a>
+      </p>
+    </section>
+  </main>
+<script src="Login.js"></script>
+</body>
+</html>
