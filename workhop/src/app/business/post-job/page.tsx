@@ -12,7 +12,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ───────────── TYPES ───────────── */
@@ -123,7 +122,7 @@ export default function PostJobPage() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="min-h-screen p-6">
 
         <motion.div
@@ -280,6 +279,6 @@ export default function PostJobPage() {
           </div>
         </motion.div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

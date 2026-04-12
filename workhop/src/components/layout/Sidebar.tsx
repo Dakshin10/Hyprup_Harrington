@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, PlusCircle, Briefcase, ClipboardList, LogOut, Store } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Briefcase, ClipboardList, LogOut, Store, User } from "lucide-react";
 
 interface SidebarProps {
   isMobileMenuOpen: boolean;
@@ -21,6 +21,14 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen, onLogout }: Sid
     { name: "My Jobs",    href: "/business/jobs",      icon: <ClipboardList size={20} /> },
     { name: "Profile",    href: "/business/profile",   icon: <Store size={20} /> },
   ];
+
+  const studentLinks = [
+    { name: "Dashboard",      href: "/student/dashboard", icon: <LayoutDashboard size={20} /> },
+    { name: "Available Jobs", href: "/student/jobs",      icon: <Briefcase size={20} /> },
+    { name: "Profile",        href: "/student/profile",   icon: <User size={20} /> },
+  ];
+
+  const links = role === "business" ? businessLinks : studentLinks;
 
   return (
     <aside
@@ -41,8 +49,8 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen, onLogout }: Sid
       <div className="p-0">
         <p className="px-6 mt-6 text-xs font-bold text-text-muted uppercase tracking-widest mb-4">Navigation</p>
         <nav className="space-y-1">
-          {businessLinks.map((link) => {
-            const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/business/dashboard');
+          {links.map((link) => {
+            const isActive = pathname === link.href || (pathname.startsWith(link.href) && !['/business/dashboard', '/student/dashboard'].includes(link.href));
             return (
               <Link
                 key={link.name}

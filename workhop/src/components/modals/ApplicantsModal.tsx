@@ -110,10 +110,10 @@ export const ApplicantsModal = ({ isOpen, onClose, jobId, applicantUids }: Appli
         selectedUser: uid,
         status: "assigned"
       });
-      onClose(); // Close modal immediately after success
+      onClose();
     } catch (error) {
       console.error("Failed to assign:", error);
-      alert("Failed to assign job. Please try again.");
+      setProcessingUid(null);
     } finally {
       setProcessingUid(null);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 
@@ -11,7 +11,12 @@ interface StatCardProps {
   colorClass?: string;
 }
 
-export const StatCard = ({ label, value, icon: Icon, colorClass = "text-brand-text-primary" }: StatCardProps) => {
+export const StatCard = memo(function StatCard({
+  label,
+  value,
+  icon: Icon,
+  colorClass = "text-brand-text-primary",
+}: StatCardProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
@@ -29,4 +34,4 @@ export const StatCard = ({ label, value, icon: Icon, colorClass = "text-brand-te
       </div>
     </motion.div>
   );
-};
+});

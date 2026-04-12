@@ -1,106 +1,85 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import {
   collection,
   query,
   where,
-  onSnapshot,
+  getDocs,
   addDoc,
   updateDoc,
   doc,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/useToast";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { PageWrapper } from "@/components/MotionWrappers";
+import { LoadingSkeleton } from "@/components/dashboard/LoadingSkeleton";
+import { ToastContainer } from "@/components/ui/Toast";
 
-// ─────────────────────────────────────────────
-// STATUS BADGE
-// ─────────────────────────────────────────────
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles: any = {
-    open: "bg-warning-bg text-warning-text",
-    assigned: "bg-info-bg text-info-text",
+// ─── STATUS BADGE ────────────────────────────────────────────────────────────
+const StatusBadge = memo(function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    open: "bg-warning-bg/30 text-warning-text",
+    assigned: "bg-info-bg/30 text-info-text",
     "in-progress": "bg-primary-500/20 text-primary-400",
-    completed: "bg-success-bg text-success-text",
+    completed: "bg-success-bg/30 text-success-text",
   };
-
   return (
-    <span
-      className={`px-2.5 py-1 text-xs font-bold rounded-full ${
-        styles[status] || "bg-gray-200"
-      }`}
-    >
+    <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${styles[status] || "bg-bg-hover text-text-muted"}`}>
       {status}
     </span>
   );
-};
+});
 
-// ─────────────────────────────────────────────
-// WORKER CELL (ENHANCED)
-// ─────────────────────────────────────────────
-const WorkerCell = ({ uid }: { uid: string }) => {
+// ─── WORKER CELL ─────────────────────────────────────────────────────────────
+const WorkerCell = memo(function WorkerCell({ uid }: { uid: string }) {
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    import("firebase/firestore").then(({ getDoc, doc }) => {
-      getDoc(doc(db, "users", uid)).then((snap) => {
-        if (alive && snap.exists()) {
-          setEmail(snap.data().email);
-        }
+    import("firebase/firestore").then(({ getDoc, doc: fsDoc }) => {
+      getDoc(fsDoc(db, "users", uid)).then((snap) => {
+        if (alive && snap.exists()) setEmail(snap.data().email);
       });
     });
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [uid]);
 
   return (
     <div className="flex flex-col">
-      <span className="font-semibold text-sm text-text-primary">
-        {email || "Loading..."}
-      </span>
-      <span className="text-xs text-success-text font-bold">
-        92% reliability
-      </span>
+      <span className="font-semibold text-sm text-text-primary">{email || "Loading..."}</span>
+      <span className="text-xs text-success-text font-bold">92% reliability</span>
     </div>
   );
-};
+});
 
-// ─────────────────────────────────────────────
-// JOB CARD
-// ─────────────────────────────────────────────
-const JobCard = ({ job, onRepost }: any) => {
+// ─── JOB CARD ────────────────────────────────────────────────────────────────
+const JobCard = memo(function JobCard({ job, onRepost }: { job: any; onRepost: (job: any) => void }) {
   return (
     <motion.div
       layout
       whileHover={{ y: -5 }}
       className="bg-bg-card border border-white/10 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:border-primary-500/30 transition-colors"
     >
-      {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <StatusBadge status={job.status} />
         {job.isUrgent && (
-          <span className="text-xs text-error-text font-bold animate-pulse">
-            🔥 Urgent
-          </span>
+          <span className="text-xs text-error-text font-bold animate-pulse">🔥 Urgent</span>
         )}
       </div>
 
       <h3 className="font-bold text-lg text-text-primary">{job.title}</h3>
 
-      {/* Meta */}
       <div className="mt-3 text-sm text-text-secondary space-y-1">
         <p>💰 ₹{job.payment}</p>
         <p>⏱ {job.duration} hrs</p>
         <p>👥 {job.applicants?.length || 0} applicants</p>
       </div>
 
-      {/* Worker */}
       {job.selectedUser && (
         <div className="mt-4 border-t border-white/10 pt-3">
           <p className="text-xs text-text-muted mb-1">Assigned</p>
@@ -108,7 +87,6 @@ const JobCard = ({ job, onRepost }: any) => {
         </div>
       )}
 
-      {/* Actions */}
       <div className="mt-4 flex justify-between items-center">
         <Link
           href={`/business/job/${job.jobId}`}
@@ -116,7 +94,6 @@ const JobCard = ({ job, onRepost }: any) => {
         >
           Manage →
         </Link>
-
         {job.status === "completed" && (
           <button
             onClick={() => onRepost(job)}
@@ -128,146 +105,158 @@ const JobCard = ({ job, onRepost }: any) => {
       </div>
     </motion.div>
   );
-};
+});
 
-// ─────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────
+// ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 export default function BusinessJobsPage() {
-  const { user, role, loading } = useAuth();
-  const router = useRouter();
+  const { user, role, loading: authLoading } = useAuth();
+  const { toasts, toast, dismiss } = useToast();
 
   const [jobs, setJobs] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  // FETCH
+  // ─── Fetch jobs once ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (!user || role !== "business") return;
+    if (authLoading || !user || role !== "business") return;
 
-    const q = query(
-      collection(db, "jobs"),
-      where("createdBy", "==", user.uid)
-    );
+    let cancelled = false;
 
-    const unsub = onSnapshot(q, (snap) => {
-      const data: any[] = [];
+    const fetchJobs = async () => {
+      setLoadingJobs(true);
+      try {
+        const q = query(
+          collection(db, "jobs"),
+          where("createdBy", "==", user.uid),
+          limit(30)
+        );
+        const snap = await getDocs(q);
+        if (cancelled) return;
+        const data: any[] = snap.docs.map((d) => ({ jobId: d.id, ...d.data() }));
+        setJobs(data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+      } catch (err) {
+        console.error("[BusinessJobs] fetch error:", err);
+        toast("Failed to load jobs", "error");
+      } finally {
+        if (!cancelled) setLoadingJobs(false);
+      }
+    };
 
-      snap.forEach((d) =>
-        data.push({
-          jobId: d.id,
-          ...d.data(),
-        })
-      );
+    fetchJobs();
+    return () => { cancelled = true; };
+  }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-      setJobs(data);
-    });
-
-    return unsub;
-  }, [user, role]);
-
-  // REPOST
-  const handleRepost = async (job: any) => {
+  // ─── Repost handler ───────────────────────────────────────────────────────
+  const handleRepost = useCallback(async (job: any) => {
     const newJob = {
       ...job,
       applicants: [],
       selectedUser: null,
       status: "open",
       createdAt: Date.now(),
+      jobId: undefined,
     };
+    try {
+      const docRef = await addDoc(collection(db, "jobs"), newJob);
+      await updateDoc(doc(db, "jobs", docRef.id), { jobId: docRef.id });
+      setJobs((prev) => [{ ...newJob, jobId: docRef.id }, ...prev]);
+      toast("🚀 Job reposted successfully!", "success");
+    } catch {
+      toast("Failed to repost job", "error");
+    }
+  }, [toast]);
 
-    const docRef = await addDoc(collection(db, "jobs"), newJob);
-    await updateDoc(docRef, { jobId: docRef.id });
+  // ─── Filtered list (memoized) ─────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return jobs
+      .filter((j) => (j.title || "").toLowerCase().includes(search.toLowerCase()))
+      .filter((j) => filter === "all" || j.status === filter);
+  }, [jobs, search, filter]);
 
-    alert("🚀 Reposted!");
-  };
+  if (authLoading) return <div className="p-6"><LoadingSkeleton /></div>;
 
-  if (loading) return null;
-
-  // FILTER
-  const filtered = jobs
-    .filter((j) =>
-      j.title.toLowerCase().includes(search.toLowerCase())
-    )
-    .filter((j) => (filter === "all" ? true : j.status === filter));
+  if (!user || role !== "business") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-text-secondary">Unauthorized access</p>
+          <Link href="/login" className="text-primary-500 hover:underline">Return to Login</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
+    <>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
+      <PageWrapper>
+        <div className="p-6 space-y-6">
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-text-primary">
-              Job Tracker
-            </h1>
-            <p className="text-text-muted">
-              Manage and track all jobs
-            </p>
-          </div>
-
-          <Link
-            href="/business/post-job"
-            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg hover:scale-[1.02] transition-transform"
-          >
-            + Post Job
-          </Link>
-        </div>
-
-        {/* SEARCH */}
-        <input
-          placeholder="Search jobs..."
-          className="px-4 py-3 border border-white/10 rounded-xl w-full md:w-80 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* FILTERS */}
-        <div className="flex gap-3">
-          {["all", "open", "assigned", "completed"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 font-semibold text-sm rounded-full transition-colors border ${
-                filter === f
-                  ? "bg-primary-500 text-white border-primary-500 shadow-md"
-                  : "bg-bg-card text-text-secondary border-white/10 hover:border-primary-500/50 hover:text-text-primary"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* GRID */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 bg-bg-card border border-white/10 rounded-2xl shadow-sm">
-            <h3 className="text-xl font-bold text-text-primary">
-              No jobs yet 🚀
-            </h3>
-            <p className="text-text-muted mt-2 mb-6 text-sm">Post a job to get started!</p>
+          {/* HEADER */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary">Job Tracker</h1>
+              <p className="text-text-muted">Manage and track all jobs</p>
+            </div>
             <Link
               href="/business/post-job"
-              className="inline-block bg-primary-500 hover:bg-primary-600 text-white font-semibold px-6 py-2.5 rounded-xl transition"
+              className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg hover:scale-[1.02] transition-transform"
             >
-              Create Job
+              + Post Job
             </Link>
           </div>
-        ) : (
-          <motion.div
-            layout
-            className="grid md:grid-cols-2 xl:grid-cols-3 gap-6"
-          >
-            {filtered.map((job) => (
-              <JobCard
-                key={job.jobId}
-                job={job}
-                onRepost={handleRepost}
-              />
+
+          {/* SEARCH */}
+          <input
+            placeholder="Search jobs..."
+            className="px-4 py-3 border border-white/10 rounded-xl w-full md:w-80 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {/* FILTERS */}
+          <div className="flex gap-3 flex-wrap">
+            {["all", "open", "assigned", "completed"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-4 py-1.5 font-semibold text-sm rounded-full transition-colors border ${
+                  filter === f
+                    ? "bg-primary-500 text-white border-primary-500 shadow-md"
+                    : "bg-bg-card text-text-secondary border-white/10 hover:border-primary-500/50 hover:text-text-primary"
+                }`}
+              >
+                {f}
+              </button>
             ))}
-          </motion.div>
-        )}
-      </div>
-    </DashboardLayout>
+          </div>
+
+          {/* GRID */}
+          {loadingJobs ? (
+            <LoadingSkeleton />
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20 bg-bg-card border border-white/10 rounded-2xl">
+              <h3 className="text-xl font-bold text-text-primary">No jobs yet 🚀</h3>
+              <p className="text-text-muted mt-2 mb-6 text-sm">Post a job to get started!</p>
+              <Link
+                href="/business/post-job"
+                className="inline-block bg-primary-500 hover:bg-primary-600 text-white font-semibold px-6 py-2.5 rounded-xl transition"
+              >
+                Create Job
+              </Link>
+            </div>
+          ) : (
+            <AnimatePresence>
+              <motion.div layout className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filtered.map((job) => (
+                  <JobCard key={job.jobId} job={job} onRepost={handleRepost} />
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
+      </PageWrapper>
+    </>
   );
 }
