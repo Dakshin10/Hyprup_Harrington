@@ -1,0 +1,22 @@
+# WorkHop is a Next.js (Node.js) project.
+# Dependencies are natively managed via package.json in the /workhop directory.
+#
+# To install all packages properly, navigate to the workhop directory and run:
+# cd workhop
+# npm install
+#
+# Below is the list of core Node.js dependencies for reference:
+
+@hookform/resolvers==5.2.2
+axios==1.15.0
+clsx==2.1.1
+firebase==12.12.0
+framer-motion==12.38.0
+lucide-react==1.8.0
+next==16.2.3
+react==19.2.4
+react-dom==19.2.4
+react-hook-form==7.72.1
+tailwind-merge==3.5.0
+zod==4.3.6
+zustand==5.0.12

@@ -69,6 +69,8 @@ If you prefer to set up manually instead of using the quick start script:
    ```
 
 2. **Install dependencies:**
+   For reference, we have included a `requirements.txt` at the root of the project which lists all the core packages. 
+   Since this is a Node.js project, you can install all required packages natively with a single command (which acts just like `pip install -r requirements.txt`):
    ```bash
    npm install
    ```
