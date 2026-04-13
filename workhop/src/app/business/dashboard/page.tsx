@@ -1,95 +1,84 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   query,
   collection,
   where,
-  onSnapshot,
+  getDocs,
+  limit,
 } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/useToast";
 import { Job } from "@/types/job";
 
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { JobList } from "@/components/dashboard/JobList";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { LoadingSkeleton } from "@/components/dashboard/LoadingSkeleton";
 import { ApplicantsModal } from "@/components/modals/ApplicantsModal";
+import { ToastContainer } from "@/components/ui/Toast";
 
 import {
   Briefcase,
   Activity,
   CheckCircle,
   Users,
-  DollarSign,
-  Star,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BusinessDashboard() {
   const { user, role, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { toasts, toast, dismiss } = useToast();
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedJobForModal, setSelectedJobForModal] =
-    useState<Job | null>(null);
+  const [selectedJobForModal, setSelectedJobForModal] = useState<Job | null>(null);
+  const [activeTab, setActiveTab] = useState<"instant" | "scheduled">("instant");
 
-  const [navigating, setNavigating] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<"instant" | "scheduled">(
-    "instant"
-  );
-
-  // 🔥 FETCH JOBS
+  // ─── Fetch once (getDocs, not onSnapshot) ───────────────────────────────
   useEffect(() => {
     if (authLoading) return;
+    if (!user || role !== "business") return;
 
-    if (!user || role !== "business") {
-      router.push("/login");
-      return;
-    }
+    let cancelled = false;
 
-    const q = query(
-      collection(db, "jobs"),
-      where("createdBy", "==", user.uid)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetchedJobs: Job[] = [];
-
-        snapshot.forEach((docSnap) => {
-          fetchedJobs.push({
-            jobId: docSnap.id,
-            ...docSnap.data(),
-          } as Job);
-        });
-
-        fetchedJobs.sort(
-          (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, "jobs"),
+          where("createdBy", "==", user.uid),
+          limit(20)
         );
+        const snap = await getDocs(q);
+        if (cancelled) return;
 
-        setJobs(fetchedJobs);
-        setLoading(false);
-      },
-      (error) => {
-        console.error(error);
-        setLoading(false);
+        const fetched: Job[] = snap.docs.map((d) => ({
+          jobId: d.id,
+          ...(d.data() as Omit<Job, "jobId">),
+        }));
+
+        fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setJobs(fetched);
+      } catch (err) {
+        console.error("[BusinessDashboard] fetch error:", err);
+        toast("Failed to load jobs", "error");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
-  }, [user, role, authLoading, router]);
+    fetchJobs();
+    return () => { cancelled = true; };
+  }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 🔥 HANDLERS
+  // ─── Handlers ────────────────────────────────────────────────────────────
   const handleViewApplicants = (jobId: string) => {
     const job = jobs.find((j) => j.jobId === jobId);
     if (job) {
@@ -99,122 +88,97 @@ export default function BusinessDashboard() {
   };
 
   const handleManageJob = (jobId: string) => {
-    setNavigating(true);
-    router.push(`/business/job/${jobId}`);
+    // Navigation handled by Link in JobCard — no router.push needed
+    void jobId;
   };
 
-  if (authLoading || (!user && !authLoading)) return null;
+  // ─── Stats (memoized) ────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const totalJobs = jobs.length;
+    const activeJobs = jobs.filter((j) =>
+      ["open", "assigned", "in-progress"].includes(j.status)
+    ).length;
+    const completedJobs = jobs.filter((j) => j.status === "completed").length;
+    const totalApplicants = jobs.reduce((sum, j) => sum + (j.applicants?.length || 0), 0);
+    const totalSpent = jobs
+      .filter((j) => j.paymentStatus === "paid")
+      .reduce((sum, j) => sum + (j.payment || 0), 0);
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weeklySpending = jobs
+      .filter((j) => j.paymentStatus === "paid" && j.createdAt > oneWeekAgo)
+      .reduce((sum, j) => sum + (j.payment || 0), 0);
 
-  // 🔥 STATS
-  const totalJobs = jobs.length;
+    return { totalJobs, activeJobs, completedJobs, totalApplicants, totalSpent, weeklySpending };
+  }, [jobs]);
 
-  const activeJobs = jobs.filter((j) =>
-    ["open", "assigned", "in-progress"].includes(j.status)
-  ).length;
+  // ─── Tab-filtered job lists (memoized) ──────────────────────────────────
+  const { instantJobs, scheduledJobs, displayedJobs } = useMemo(() => {
+    const instant = jobs.filter((j) => j.jobType !== "scheduled" && j.status !== "completed");
+    const scheduled = jobs.filter((j) => j.jobType === "scheduled" && j.status !== "completed");
+    return {
+      instantJobs: instant,
+      scheduledJobs: scheduled,
+      displayedJobs: activeTab === "instant" ? instant : scheduled,
+    };
+  }, [jobs, activeTab]);
 
-  const completedJobs = jobs.filter(
-    (j) => j.status === "completed"
-  ).length;
-
-  const totalApplicants = jobs.reduce(
-    (sum, j) => sum + (j.applicants?.length || 0),
-    0
-  );
-
-  const totalSpent = jobs
-    .filter((j) => j.paymentStatus === "paid")
-    .reduce((sum, j) => sum + (j.payment || 0), 0);
-
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-  const weeklySpending = jobs
-    .filter(
-      (j) =>
-        j.paymentStatus === "paid" &&
-        j.createdAt > oneWeekAgo
-    )
-    .reduce((sum, j) => sum + (j.payment || 0), 0);
-
-  const instantJobs = jobs.filter(
-    (j) => j.jobType !== "scheduled" && j.status !== "completed"
-  );
-
-  const scheduledJobs = jobs.filter(
-    (j) => j.jobType === "scheduled" && j.status !== "completed"
-  );
-
-  const displayedJobs =
-    activeTab === "instant" ? instantJobs : scheduledJobs;
+  if (authLoading) return <div className="p-6"><LoadingSkeleton /></div>;
+  if (!user || role !== "business") return null;
 
   return (
-    <DashboardLayout>
-      {navigating && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center">
-          <div className="bg-bg-card text-text-primary px-6 py-4 rounded-2xl shadow-xl font-semibold flex items-center gap-3 border border-white/10">
-            <div className="w-6 h-6 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-            Loading...
-          </div>
-        </div>
-      )}
+    <>
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
       <div className="p-6 space-y-8">
 
-        {/* 🔥 HEADER + CTA */}
+        {/* HEADER + CTA */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-extrabold text-text-primary">
-              Overview
-            </h1>
-            <p className="text-text-muted">
-              Monitor your micro-job performance and applications
-            </p>
+            <h1 className="text-3xl font-extrabold text-text-primary">Overview</h1>
+            <p className="text-text-muted">Monitor your micro-job performance and applications</p>
           </div>
 
-          <button
-            onClick={() => {
-              setNavigating(true);
-              router.push("/business/post-job");
-            }}
+          <Link
+            href="/business/post-job"
             className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-2.5 rounded-xl font-semibold text-white shadow-lg shrink-0 hover:scale-[1.02] transition-transform"
           >
             + Post Job
-          </button>
+          </Link>
         </div>
 
-        {/* 🔥 STATS */}
-        {!loading && (
+        {/* STATS */}
+        {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatCard label="Jobs" value={totalJobs} icon={Briefcase} />
-            <StatCard label="Active" value={activeJobs} icon={Activity} />
-            <StatCard label="Completed" value={completedJobs} icon={CheckCircle} />
-            <StatCard label="Applicants" value={totalApplicants} icon={Users} />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-bg-card border border-white/10 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <StatCard label="Jobs" value={stats.totalJobs} icon={Briefcase} />
+            <StatCard label="Active" value={stats.activeJobs} icon={Activity} />
+            <StatCard label="Completed" value={stats.completedJobs} icon={CheckCircle} />
+            <StatCard label="Applicants" value={stats.totalApplicants} icon={Users} />
           </div>
         )}
 
-        {/* 🔥 FINANCIAL PANEL */}
+        {/* FINANCIAL PANEL */}
         {!loading && (
           <div className="bg-bg-card border border-white/10 shadow-lg p-6 rounded-2xl flex justify-between">
             <div>
               <p className="text-text-muted text-sm">Total Spent</p>
-              <h2 className="text-3xl font-bold text-success-text">
-                ₹{totalSpent}
-              </h2>
+              <h2 className="text-3xl font-bold text-success-text">₹{stats.totalSpent}</h2>
             </div>
-
             <div className="text-right">
               <p className="text-text-muted text-sm">This Week</p>
-              <h2 className="text-xl font-bold text-success-text">
-                +₹{weeklySpending}
-              </h2>
+              <h2 className="text-xl font-bold text-success-text">+₹{stats.weeklySpending}</h2>
             </div>
           </div>
         )}
 
-        {/* 🔥 JOB SECTION */}
+        {/* JOB SECTION */}
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-text-primary">
-              Manage Listings
-            </h2>
+            <h2 className="text-xl font-bold text-text-primary">Manage Listings</h2>
 
             <div className="flex bg-bg-hover border border-white/5 p-1 rounded-xl">
               <button
@@ -227,7 +191,6 @@ export default function BusinessDashboard() {
               >
                 Today ({instantJobs.length})
               </button>
-
               <button
                 onClick={() => setActiveTab("scheduled")}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
@@ -246,9 +209,7 @@ export default function BusinessDashboard() {
           ) : jobs.length === 0 ? (
             <EmptyState />
           ) : displayedJobs.length === 0 ? (
-            <div className="text-center text-text-muted py-10">
-              No jobs in this category
-            </div>
+            <div className="text-center text-text-muted py-10">No jobs in this category</div>
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
@@ -256,6 +217,7 @@ export default function BusinessDashboard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
               >
                 <JobList
                   jobs={displayedJobs}
@@ -267,7 +229,7 @@ export default function BusinessDashboard() {
           )}
         </div>
 
-        {/* 🔥 MODAL */}
+        {/* MODAL */}
         <ApplicantsModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -275,6 +237,6 @@ export default function BusinessDashboard() {
           applicantUids={selectedJobForModal?.applicants || []}
         />
       </div>
-    </DashboardLayout>
+    </>
   );
 }

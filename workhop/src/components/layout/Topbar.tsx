@@ -6,7 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Topbar = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Simulated notifications array
@@ -20,7 +20,7 @@ export const Topbar = () => {
   return (
     <header className="hidden md:flex h-20 items-center justify-between px-10 bg-bg-main/80 backdrop-blur-md border-b border-white/10 z-10 sticky top-0">
       <h2 className="text-xl font-bold text-text-primary hidden lg:block">
-        Business Portal
+        {role === "business" ? "Business Portal" : "Student Hub"}
       </h2>
 
       <div className="flex items-center gap-6 ml-auto">

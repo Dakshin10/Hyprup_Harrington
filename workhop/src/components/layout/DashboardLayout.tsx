@@ -9,6 +9,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { Menu, X } from "lucide-react";
 import PageTransition from "@/components/layout/PageTransition";
+import NavigationProgress from "@/components/layout/NavigationProgress";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,7 +26,9 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 font-sans selection:bg-orange-500/30">
+    <>
+      <NavigationProgress />
+      <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 font-sans selection:bg-orange-500/30">
 
       {/* Mobile Topbar for Hamburger */}
       <div className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50">
@@ -53,6 +56,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           </div>
         </main>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
