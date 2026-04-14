@@ -3,14 +3,13 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import {
   collection,
-  query,
-  where,
-  getDocs,
   addDoc,
   updateDoc,
+  getDoc,
   doc,
-  limit,
 } from "firebase/firestore";
+import { useJobs } from "@/hooks/useJobs";
+import { useStore } from "@/store/useStore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
@@ -41,11 +40,15 @@ const WorkerCell = memo(function WorkerCell({ uid }: { uid: string }) {
 
   useEffect(() => {
     let alive = true;
-    import("firebase/firestore").then(({ getDoc, doc: fsDoc }) => {
-      getDoc(fsDoc(db, "users", uid)).then((snap) => {
+    const fetchUser = async () => {
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
         if (alive && snap.exists()) setEmail(snap.data().email);
-      });
-    });
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUser();
     return () => { alive = false; };
   }, [uid]);
 
@@ -112,40 +115,15 @@ export default function BusinessJobsPage() {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(true);
+  const { setJobs } = useStore();
+  const { jobs, loading: loadingJobs, refetch } = useJobs({
+    createdBy: user?.uid,
+    maxResults: 30,
+    skip: authLoading || !user || role !== "business",
+  });
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-
-  // ─── Fetch jobs once ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (authLoading || !user || role !== "business") return;
-
-    let cancelled = false;
-
-    const fetchJobs = async () => {
-      setLoadingJobs(true);
-      try {
-        const q = query(
-          collection(db, "jobs"),
-          where("createdBy", "==", user.uid),
-          limit(30)
-        );
-        const snap = await getDocs(q);
-        if (cancelled) return;
-        const data: any[] = snap.docs.map((d) => ({ jobId: d.id, ...d.data() }));
-        setJobs(data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
-      } catch (err) {
-        console.error("[BusinessJobs] fetch error:", err);
-        toast("Failed to load jobs", "error");
-      } finally {
-        if (!cancelled) setLoadingJobs(false);
-      }
-    };
-
-    fetchJobs();
-    return () => { cancelled = true; };
-  }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Repost handler ───────────────────────────────────────────────────────
   const handleRepost = useCallback(async (job: any) => {
@@ -160,7 +138,7 @@ export default function BusinessJobsPage() {
     try {
       const docRef = await addDoc(collection(db, "jobs"), newJob);
       await updateDoc(doc(db, "jobs", docRef.id), { jobId: docRef.id });
-      setJobs((prev) => [{ ...newJob, jobId: docRef.id }, ...prev]);
+      setJobs([{ ...newJob, jobId: docRef.id }, ...jobs]);
       toast("🚀 Job reposted successfully!", "success");
     } catch {
       toast("Failed to repost job", "error");
