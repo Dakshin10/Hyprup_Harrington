@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { updateDoc, doc, arrayUnion, getDocs, query, collection, where, limit } from "firebase/firestore";
+import { updateDoc, doc, arrayUnion } from "firebase/firestore";
+import { useJobs } from "@/hooks/useJobs";
+import { useStore } from "@/store/useStore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
@@ -24,42 +26,15 @@ const StudentJobsPage = () => {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { setJobs } = useStore();
+  const { jobs, loading } = useJobs({
+    status: "open",
+    maxResults: 20,
+    skip: authLoading || !user || role !== "student",
+  });
+
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterOptions>("all");
-
-  // ─── Fetch open jobs once (getDocs, not onSnapshot) ──────────────────────
-  useEffect(() => {
-    if (authLoading || !user) return;
-
-    let cancelled = false;
-    const fetchJobs = async () => {
-      setLoading(true);
-      try {
-        const q = query(
-          collection(db, "jobs"),
-          where("status", "==", "open"),
-          limit(20)
-        );
-        const snap = await getDocs(q);
-        if (cancelled) return;
-        const fetched: Job[] = snap.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
-        setJobs(fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
-      } catch (err) {
-        console.error("[StudentJobs] fetch error:", err);
-        toast("Failed to load jobs", "error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchJobs();
-    return () => { cancelled = true; };
-  }, [user, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Apply handler ────────────────────────────────────────────────────────
   const handleApply = useCallback(async (jobId: string) => {
@@ -69,9 +44,9 @@ const StudentJobsPage = () => {
       await updateDoc(doc(db, "jobs", jobId), {
         applicants: arrayUnion(user.uid),
       });
-      // Optimistically update local state
-      setJobs((prev) =>
-        prev.map((j) =>
+      // Optimistically update global state
+      setJobs(
+        jobs.map((j) =>
           j.jobId === jobId
             ? { ...j, applicants: [...(j.applicants || []), user.uid] }
             : j

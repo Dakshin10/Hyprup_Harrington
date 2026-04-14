@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  query,
-  collection,
-  where,
-  getDocs,
-  limit,
-} from "firebase/firestore";
+import { useJobs } from "@/hooks/useJobs";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,49 +28,15 @@ export default function BusinessDashboard() {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs, loading } = useJobs({
+    createdBy: user?.uid,
+    maxResults: 20,
+    skip: authLoading || !user || role !== "business",
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedJobForModal, setSelectedJobForModal] = useState<Job | null>(null);
   const [activeTab, setActiveTab] = useState<"instant" | "scheduled">("instant");
-
-  // ─── Fetch once (getDocs, not onSnapshot) ───────────────────────────────
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || role !== "business") return;
-
-    let cancelled = false;
-
-    const fetchJobs = async () => {
-      setLoading(true);
-      try {
-        const q = query(
-          collection(db, "jobs"),
-          where("createdBy", "==", user.uid),
-          limit(20)
-        );
-        const snap = await getDocs(q);
-        if (cancelled) return;
-
-        const fetched: Job[] = snap.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
-
-        fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        setJobs(fetched);
-      } catch (err) {
-        console.error("[BusinessDashboard] fetch error:", err);
-        toast("Failed to load jobs", "error");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchJobs();
-    return () => { cancelled = true; };
-  }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const handleViewApplicants = (jobId: string) => {
