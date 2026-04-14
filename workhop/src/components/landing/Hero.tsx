@@ -16,7 +16,7 @@ const cardVariants = {
     y: [0, -10, 0],
     transition: {
       opacity: { duration: 0.5, delay: i * 0.15 },
-      y: { duration: 3 + i * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.6 },
+      y: { duration: 3 + i * 0.5, repeat: Infinity, ease: "easeInOut" as const, delay: i * 0.6 },
     },
   }),
 };
