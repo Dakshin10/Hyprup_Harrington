@@ -1,18 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
 import { useToast } from "@/hooks/useToast";
-import { useState } from "react";
+import { getJobs } from "@/services/jobService";
+import { updateProfile } from "@/services/userService";
+import { Job } from "@/types/job";
 import { PageWrapper, MotionCard } from "@/components/MotionWrappers";
 import { ToastContainer } from "@/components/ui/Toast";
 import { LoadingSkeleton } from "@/components/dashboard/LoadingSkeleton";
-import { getDocs, query, collection, where, limit } from "firebase/firestore";
-import { Job } from "@/types/job";
-import { useEffect } from "react";
 
 export default function StudentProfile() {
   const { user, role } = useAuth();
@@ -22,7 +19,7 @@ export default function StudentProfile() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
 
-  // ─── Fetch job history once (getDocs, not onSnapshot) ────────────────────
+  // ─── Fetch job history once ───────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -30,18 +27,8 @@ export default function StudentProfile() {
     const fetchJobs = async () => {
       setJobsLoading(true);
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "jobs"),
-            where("applicants", "array-contains", user.uid),
-            limit(20)
-          )
-        );
+        const fetched = await getJobs({ applicant: user.uid, limit: 20 });
         if (cancelled) return;
-        const fetched: Job[] = snap.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
         setJobs(fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
       } catch (err) {
         console.error("[StudentProfile] fetch error:", err);
@@ -75,7 +62,7 @@ export default function StudentProfile() {
   const saveProfile = async (updatedSkills: string[]) => {
     if (!user) return;
     try {
-      await setDoc(doc(db, "users", user.uid), { skills: updatedSkills }, { merge: true });
+      await updateProfile(user.uid, { skills: updatedSkills });
       toast("Profile saved!", "success");
       setEditing(false);
     } catch {
@@ -83,7 +70,7 @@ export default function StudentProfile() {
     }
   };
 
-  const skills: string[] = userData?.skills as string[] || ["Customer Service", "Helper", "Stocking"];
+  const skills: string[] = (userData?.skills as string[]) || ["Customer Service", "Helper", "Stocking"];
 
   if (!user || role !== "student") return null;
 
@@ -101,7 +88,7 @@ export default function StudentProfile() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-text-primary">
-              {userData?.name as string || user.email}
+              {(userData?.name as string) || user.email}
             </h1>
             <p className="text-sm text-text-muted">
               Student • {userData?.available ? "🟢 Available" : "⚪ Offline"}

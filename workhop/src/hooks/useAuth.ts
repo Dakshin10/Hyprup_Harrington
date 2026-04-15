@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth } from "../lib/firebase";
+import { getUserProfile } from "@/services/userService";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -11,20 +11,24 @@ export const useAuth = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (userDoc.exists()) {
-            setRole(userDoc.data().role as "student" | "business");
+          const profile = await getUserProfile(currentUser.uid);
+          const r = profile?.role;
+          if (r === "student" || r === "business") {
+            setRole(r);
+          } else {
+            setRole(null);
           }
         } catch (error) {
-          console.error("Error fetching user role:", error);
+          console.error("[useAuth] Error fetching user role from API:", error);
+          setRole(null);
         }
       } else {
         setRole(null);
       }
-      
+
       setLoading(false);
     });
 

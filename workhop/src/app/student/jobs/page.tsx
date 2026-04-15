@@ -1,57 +1,42 @@
-import { unstable_cache } from "next/cache";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { connectToDatabase } from "@/lib/mongodb";
+import JobModel from "@/models/Job";
 import StudentJobsClient from "./StudentJobsClient";
 import { Job } from "@/types/job";
 
-const getJobs = unstable_cache(
-  async () => {
-    try {
-      if (!process.env.FIREBASE_PROJECT_ID) {
-        console.warn("⚠️ Missing Firebase Admin .env variables. Returning empty jobs array on server to avoid crash.");
-        return [];
-      }
-      
-      const snap = await adminDb.collection("jobs")
-        .where("status", "==", "open")
-        .orderBy("createdAt", "desc")
-        .limit(20)
-        .get();
+// Always render dynamically — depends on live MongoDB connection
+export const dynamic = "force-dynamic";
 
-      return snap.docs.map((doc) => {
-        const data = doc.data();
-        let createdAtNum = Date.now();
-        if (data.createdAt) {
-          createdAtNum = typeof data.createdAt.toMillis === 'function' 
-            ? data.createdAt.toMillis() 
-            : data.createdAt;
-        }
 
-        return {
-          id: doc.id,
-          jobId: doc.id,
-          title: data.title || "",
-          description: data.description || "",
-          payment: data.payment || 0,
-          duration: data.duration || 0,
-          location: data.location || "",
-          createdBy: data.createdBy || "",
-          applicants: data.applicants || [],
-          selectedUser: data.selectedUser || null,
-          status: data.status || "open",
-          isUrgent: data.isUrgent || false,
-          createdAt: createdAtNum,
-        } as unknown as Job;
-      });
-    } catch (error) {
-      console.error("Error fetching jobs in Server Component:", error);
-      return [];
-    }
-  },
-  ["student-jobs-cache"],
-  { revalidate: 60 }
-);
+async function getOpenJobs(): Promise<Job[]> {
+  try {
+    await connectToDatabase();
+    const docs = await JobModel.find({ status: "open" })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    return docs.map((doc) => ({
+      id: doc.jobId,
+      jobId: doc.jobId,
+      title: doc.title || "",
+      description: doc.description || "",
+      payment: doc.payment || 0,
+      duration: doc.duration || 0,
+      location: doc.location || "",
+      createdBy: doc.createdBy || "",
+      applicants: doc.applicants || [],
+      selectedUser: doc.selectedUser || null,
+      status: doc.status || "open",
+      isUrgent: doc.isUrgent || false,
+      createdAt: doc.createdAt || Date.now(),
+    })) as unknown as Job[];
+  } catch (error) {
+    console.error("[Student Jobs Server] Error fetching jobs:", error);
+    return [];
+  }
+}
 
 export default async function JobsPage() {
-  const initialJobs = await getJobs();
+  const initialJobs = await getOpenJobs();
   return <StudentJobsClient initialJobs={initialJobs} />;
 }

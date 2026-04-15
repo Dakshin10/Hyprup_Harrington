@@ -2,17 +2,10 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { createJob } from "@/services/jobService";
+import { getTemplates } from "@/services/templateService";
 
 /* ───────────── TYPES ───────────── */
 interface JobForm {
@@ -62,18 +55,12 @@ export default function PostJobPage() {
   /* ───────────── FETCH TEMPLATES ───────────── */
   useEffect(() => {
     if (!user) return;
-
-    const q = query(
-      collection(db, "jobTemplates"),
-      where("createdBy", "==", user.uid)
-    );
-
-    getDocs(q).then((snap) => {
-      setTemplates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    getTemplates()
+      .then(setTemplates)
+      .catch((err) => console.error("[PostJob] templates fetch:", err));
   }, [user]);
 
-  const update = (key: string, value: any) => {
+  const update = (key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -87,29 +74,15 @@ export default function PostJobPage() {
 
     try {
       setLoading(true);
+      setError("");
 
-      const docRef = await addDoc(collection(db, "jobs"), {
-        ...form,
-        createdBy: user?.uid,
-        applicants: [],
-        selectedUser: null,
-        status: "open",
-        createdAt: Date.now(),
-      });
-
-      await updateDoc(docRef, { jobId: docRef.id });
-
-      if (saveTemplate) {
-        await addDoc(collection(db, "jobTemplates"), {
-          ...form,
-          createdBy: user?.uid,
-        });
-      }
+      await createJob({ ...form, saveTemplate });
 
       setSuccess("🚀 Job posted!");
       setTimeout(() => router.push("/business/dashboard"), 1200);
-    } catch {
-      setError("Something went wrong");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -140,8 +113,8 @@ export default function PostJobPage() {
             ) : (
               templates.map((t) => (
                 <div
-                  key={t.id}
-                  onClick={() => setForm(t)}
+                  key={t.id || t._id}
+                  onClick={() => setForm({ ...t })}
                   className="p-4 border border-white/10 rounded-xl mb-2 cursor-pointer bg-bg-main shadow hover:border-primary-500/30 hover:-translate-y-0.5 transition"
                 >
                   <p className="font-semibold text-text-primary">{t.title}</p>
@@ -198,9 +171,7 @@ export default function PostJobPage() {
                 <textarea
                   placeholder="Description"
                   value={form.description}
-                  onChange={(e) =>
-                    update("description", e.target.value)
-                  }
+                  onChange={(e) => update("description", e.target.value)}
                   className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
                 />
               </div>
@@ -215,17 +186,13 @@ export default function PostJobPage() {
                   <input
                     type="number"
                     value={form.payment}
-                    onChange={(e) =>
-                      update("payment", e.target.value)
-                    }
+                    onChange={(e) => update("payment", e.target.value)}
                     className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
                   />
 
                   <select
                     value={form.duration}
-                    onChange={(e) =>
-                      update("duration", Number(e.target.value))
-                    }
+                    onChange={(e) => update("duration", Number(e.target.value))}
                     className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
                   >
                     <option value={1}>1 hr</option>
@@ -237,9 +204,7 @@ export default function PostJobPage() {
                 <input
                   placeholder="Location"
                   value={form.location}
-                  onChange={(e) =>
-                    update("location", e.target.value)
-                  }
+                  onChange={(e) => update("location", e.target.value)}
                   className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
                 />
               </div>
@@ -250,21 +215,17 @@ export default function PostJobPage() {
                   <input
                     type="checkbox"
                     checked={form.isUrgent}
-                    onChange={(e) =>
-                      update("isUrgent", e.target.checked)
-                    }
+                    onChange={(e) => update("isUrgent", e.target.checked)}
                   />
-                  Urgent
+                  {" "}Urgent
                 </label>
 
                 <label>
                   <input
                     type="checkbox"
-                    onChange={(e) =>
-                      setSaveTemplate(e.target.checked)
-                    }
+                    onChange={(e) => setSaveTemplate(e.target.checked)}
                   />
-                  Save Template
+                  {" "}Save Template
                 </label>
               </div>
 

@@ -1,22 +1,14 @@
-import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+/**
+ * firebaseAdmin.ts
+ *
+ * Firebase Admin SDK is NO LONGER used for token verification.
+ * Token verification now uses jose + Google's public JWKS endpoint (authMiddleware.ts).
+ *
+ * This file is kept as a shell in case Admin SDK operations are needed in future
+ * (e.g. sending push notifications, managing users server-side).
+ * 
+ * All database operations use MongoDB via Mongoose.
+ */
 
-if (!getApps().length) {
-  // If we have credentials in the env variables, initialize with them
-  // Otherwise it might fall back to application default credentials in a deployed environment
-  const credentialConfig = process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY
-    ? {
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          // Replace escaped newlines so the key works correctly from .env files
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        })
-      }
-    : undefined;
-
-  initializeApp(credentialConfig);
-}
-
-// Get the default app instance
-export const adminDb = getFirestore(getApp());
+// Nothing to export for now — auth is handled by authMiddleware.ts
+export {};

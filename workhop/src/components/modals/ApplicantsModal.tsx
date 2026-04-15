@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getUserProfile } from "@/services/userService";
+import { selectWorker, rejectApplicant } from "@/services/jobService";
 import { Button } from "@/components/ui/Button";
 import { X, CheckCircle2 } from "lucide-react";
 
@@ -32,24 +32,18 @@ const ApplicantRow = ({
 
   useEffect(() => {
     let isMounted = true;
-    const fetchUser = async () => {
-      try {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if (userDoc.exists() && isMounted) {
-          const d = userDoc.data();
-          setEmail(d.email || "Unknown Student");
-          if(d.rating) setRating(d.rating);
-          if(d.jobsCompleted) setJobsCompleted(d.jobsCompleted);
-          if(d.reliability) setReliability(d.reliability);
-        }
-      } catch (e) {
+    getUserProfile(uid)
+      .then((profile) => {
+        if (!isMounted) return;
+        if (profile?.email) setEmail(profile.email);
+        if (profile?.rating) setRating(profile.rating as number);
+        if (profile?.jobsCompleted) setJobsCompleted(profile.jobsCompleted as number);
+        if (profile?.reliability) setReliability(profile.reliability as number);
+      })
+      .catch(() => {
         if (isMounted) setEmail("Failed to load user");
-      }
-    };
-    fetchUser();
-    return () => {
-      isMounted = false;
-    };
+      });
+    return () => { isMounted = false; };
   }, [uid]);
 
   return (
@@ -105,11 +99,7 @@ export const ApplicantsModal = ({ isOpen, onClose, jobId, applicantUids }: Appli
     if (!jobId) return;
     setProcessingUid(uid);
     try {
-      const jobRef = doc(db, "jobs", jobId);
-      await updateDoc(jobRef, {
-        selectedUser: uid,
-        status: "assigned"
-      });
+      await selectWorker(jobId, uid);
       onClose();
     } catch (error) {
       console.error("Failed to assign:", error);
@@ -123,11 +113,7 @@ export const ApplicantsModal = ({ isOpen, onClose, jobId, applicantUids }: Appli
     if (!jobId) return;
     setProcessingUid(uid);
     try {
-      const jobRef = doc(db, "jobs", jobId);
-      // Rejects actively push the UID out of the applicants payload 
-      await updateDoc(jobRef, {
-        applicants: applicantUids.filter(u => u !== uid)
-      });
+      await rejectApplicant(jobId, uid);
     } catch (error) {
       console.error("Failed to reject:", error);
     } finally {
