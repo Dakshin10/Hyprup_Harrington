@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  collection,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-  updateDoc,
-  doc,
-  limit,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
+import { getJobs, confirmJob, checkInJob } from "@/services/jobService";
+import { updateProfile } from "@/services/userService";
 import { Job } from "@/types/job";
 import Link from "next/link";
 import { PageWrapper, StaggerContainer, MotionCard, MotionButton } from "@/components/MotionWrappers";
@@ -24,54 +15,27 @@ const StudentDashboard = () => {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
-  // Jobs from history (getDocs — doesn't need realtime)
   const [myJobs, setMyJobs] = useState<Job[]>([]);
-  // Open jobs for "Nearby Jobs" section (getDocs)
   const [openJobs, setOpenJobs] = useState<Job[]>([]);
-  // Active jobs keep a single real-time listener (legitimately real-time)
   const [activeJobs, setActiveJobs] = useState<Job[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [actionProcessing, setActionProcessing] = useState<string | null>(null);
   const [available, setAvailable] = useState(true);
 
-  // ─── Once: fetch job history + nearby open jobs ──────────────────────────
+  // ─── One-time fetch: job history + open jobs ──────────────────────────────
   useEffect(() => {
     if (authLoading || !user || role !== "student") return;
-
     let cancelled = false;
 
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [mySnap, openSnap] = await Promise.all([
-          getDocs(
-            query(
-              collection(db, "jobs"),
-              where("applicants", "array-contains", user.uid),
-              limit(20)
-            )
-          ),
-          getDocs(
-            query(
-              collection(db, "jobs"),
-              where("status", "==", "open"),
-              limit(10)
-            )
-          ),
+        const [myFetched, openFetched] = await Promise.all([
+          getJobs({ applicant: user.uid, limit: 20 }),
+          getJobs({ status: "open", limit: 10 }),
         ]);
-
         if (cancelled) return;
-
-        const myFetched: Job[] = mySnap.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
-        const openFetched: Job[] = openSnap.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
-
         setMyJobs(myFetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
         setOpenJobs(openFetched);
       } catch (err) {
@@ -86,25 +50,23 @@ const StudentDashboard = () => {
     return () => { cancelled = true; };
   }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Real-time listener ONLY for active jobs (job is in progress) ────────
+  // ─── Polling: active jobs (replaces onSnapshot) ───────────────────────────
   useEffect(() => {
     if (!user || role !== "student") return;
 
-    const q = query(
-      collection(db, "jobs"),
-      where("selectedUser", "==", user.uid),
-      where("completed", "==", false)
-    );
+    const fetchActive = async () => {
+      try {
+        const jobs = await getJobs({ applicant: user.uid, limit: 10 });
+        const active = jobs.filter((j) => j.selectedUser === user.uid && !j.completed);
+        setActiveJobs(active);
+      } catch (err) {
+        console.error("[StudentDashboard] active jobs poll error:", err);
+      }
+    };
 
-    const unsub = onSnapshot(q, (snap) => {
-      const active: Job[] = snap.docs.map((d) => ({
-        jobId: d.id,
-        ...(d.data() as Omit<Job, "jobId">),
-      }));
-      setActiveJobs(active);
-    });
-
-    return () => unsub();
+    fetchActive();
+    const interval = setInterval(fetchActive, 15_000); // poll every 15s
+    return () => clearInterval(interval);
   }, [user, role]);
 
   // ─── Availability toggle ─────────────────────────────────────────────────
@@ -113,7 +75,7 @@ const StudentDashboard = () => {
     const newValue = !available;
     setAvailable(newValue);
     try {
-      await updateDoc(doc(db, "users", user.uid), { available: newValue });
+      await updateProfile(user.uid, { available: newValue });
     } catch {
       toast("Failed to update availability", "error");
       setAvailable(!newValue); // revert
@@ -121,13 +83,20 @@ const StudentDashboard = () => {
   };
 
   // ─── Job action handler ──────────────────────────────────────────────────
-  const handleAction = async (jobId: string, payload: Partial<Job>) => {
+  const handleAction = async (jobId: string, action: "confirm" | "checkin") => {
     setActionProcessing(jobId);
     try {
-      await updateDoc(doc(db, "jobs", jobId), payload);
+      let updated: Job;
+      if (action === "confirm") {
+        updated = await confirmJob(jobId);
+      } else {
+        updated = await checkInJob(jobId);
+      }
+      setActiveJobs((prev) => prev.map((j) => (j.jobId === jobId ? { ...j, ...updated } : j)));
       toast("Job updated!", "success");
-    } catch {
-      toast("Action failed. Try again.", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Action failed. Try again.";
+      toast(msg, "error");
     } finally {
       setActionProcessing(null);
     }
@@ -215,7 +184,7 @@ const StudentDashboard = () => {
           )}
         </section>
 
-        {/* ACTIVE TASK FLOW (real-time) */}
+        {/* ACTIVE TASK FLOW (polling-based) */}
         {activeJobs.length > 0 && (
           <section className="mb-10">
             <h2 className="text-xl font-bold mb-4 text-text-primary">Active Jobs</h2>
@@ -226,7 +195,7 @@ const StudentDashboard = () => {
                 <div className="mt-4 flex gap-3">
                   {!job.confirmed && (
                     <MotionButton
-                      onClick={() => handleAction(job.jobId, { confirmed: true })}
+                      onClick={() => handleAction(job.jobId, "confirm")}
                       disabled={actionProcessing === job.jobId}
                       className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                     >
@@ -235,7 +204,7 @@ const StudentDashboard = () => {
                   )}
                   {job.confirmed && !job.checkIn && (
                     <MotionButton
-                      onClick={() => handleAction(job.jobId, { checkIn: true })}
+                      onClick={() => handleAction(job.jobId, "checkin")}
                       disabled={actionProcessing === job.jobId}
                       className="px-4 py-2 bg-info-text text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                     >
@@ -243,13 +212,9 @@ const StudentDashboard = () => {
                     </MotionButton>
                   )}
                   {job.checkIn && !job.completed && (
-                    <MotionButton
-                      onClick={() => handleAction(job.jobId, { completed: true })}
-                      disabled={actionProcessing === job.jobId}
-                      className="px-4 py-2 bg-success-text text-white rounded-lg text-sm font-semibold disabled:opacity-50"
-                    >
-                      {actionProcessing === job.jobId ? "..." : "Complete Job"}
-                    </MotionButton>
+                    <div className="px-4 py-2 bg-success-bg/20 text-success-text rounded-lg text-sm font-semibold">
+                      ✅ Checked In — Awaiting completion
+                    </div>
                   )}
                 </div>
               </div>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getUserProfile } from "@/services/userService";
 import { useStore } from "@/store/useStore";
 
 interface UseUserDataOptions {
@@ -27,21 +26,8 @@ export const useUserData = ({ uid, includeBusinessProfile = false }: UseUserData
       setLoading(true);
 
       try {
-        const userSnap = await getDoc(doc(db, "users", uid));
-        let merged: Record<string, unknown> = {};
-
-        if (userSnap.exists()) {
-          merged = { ...userSnap.data() };
-        }
-
-        if (includeBusinessProfile) {
-          const bizSnap = await getDoc(doc(db, "businessProfiles", uid));
-          if (bizSnap.exists()) {
-            merged = { ...merged, ...bizSnap.data() };
-          }
-        }
-
-        setUserData(merged);
+        const profile = await getUserProfile(uid, { includeBusinessProfile });
+        setUserData(profile as Record<string, unknown>);
       } catch (err) {
         console.error("[useUserData] fetch error:", err);
       } finally {

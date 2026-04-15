@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useJobs } from "@/hooks/useJobs";
 import Link from "next/link";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { Job } from "@/types/job";

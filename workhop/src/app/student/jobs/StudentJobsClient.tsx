@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { updateDoc, doc, arrayUnion } from "firebase/firestore";
+import { applyToJob } from "@/services/jobService";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
-import { db } from "@/lib/firebase";
 import { Job } from "@/types/job";
 import { PageWrapper, StaggerContainer, MotionCard, MotionButton } from "@/components/MotionWrappers";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -21,8 +20,7 @@ const getDistance = (jobId: string) => {
 export default function StudentJobsClient({ initialJobs }: { initialJobs: Job[] }) {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
-  
-  // We manage the jobs visually so we can optimistically update applying state
+
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterOptions>("all");
@@ -31,15 +29,14 @@ export default function StudentJobsClient({ initialJobs }: { initialJobs: Job[] 
     if (!user) return;
     setApplyingTo(jobId);
     try {
-      await updateDoc(doc(db, "jobs", jobId), {
-        applicants: arrayUnion(user.uid),
-      });
+      await applyToJob(jobId);
       setJobs(jobs.map((j) =>
         j.jobId === jobId ? { ...j, applicants: [...(j.applicants || []), user.uid] } : j
       ));
       toast("Applied successfully! 🎉", "success");
-    } catch {
-      toast("Failed to apply. Please try again.", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to apply. Please try again.";
+      toast(msg, "error");
     } finally {
       setApplyingTo(null);
     }

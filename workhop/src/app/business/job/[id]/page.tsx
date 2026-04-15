@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/Toast";
 import { QRCode } from "@/components/ui/QRCode";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect } from "react";
+import {
+  getJob,
+  selectWorker as selectWorkerApi,
+  promoteBackup as promoteBackupApi,
+  markComplete,
+  markPaid,
+} from "@/services/jobService";
 
 type Job = {
   jobId: string;
@@ -50,17 +56,13 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  // ─── Fetch once with getDoc (not onSnapshot) ─────────────────────────────
+  // ─── Fetch job via API ────────────────────────────────────────────────────
   const fetchJob = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const snap = await getDoc(doc(db, "jobs", id as string));
-      if (snap.exists()) {
-        setJob({ jobId: snap.id, ...(snap.data() as Omit<Job, "jobId">) });
-      } else {
-        setJob(null);
-      }
+      const fetched = await getJob(id as string);
+      setJob(fetched as Job);
     } catch (err) {
       console.error("[JobDetail] fetch error:", err);
       toast("Failed to load job details", "error");
@@ -75,39 +77,63 @@ export default function JobDetailPage() {
     }
   }, [user, role, authLoading, fetchJob]);
 
-  // ─── Optimistic update helper ─────────────────────────────────────────────
-  const updateJob = useCallback(async (payload: Partial<Job>, successMsg: string) => {
+  // ─── Actions ──────────────────────────────────────────────────────────────
+  const selectWorker = async (uid: string) => {
     if (!job) return;
     setProcessing(true);
     try {
-      await updateDoc(doc(db, "jobs", job.jobId), payload);
-      setJob((prev) => (prev ? { ...prev, ...payload } : prev));
-      toast(successMsg, "success");
+      const updated = await selectWorkerApi(job.jobId, uid);
+      setJob(updated as Job);
+      toast("Worker assigned!", "success");
     } catch {
       toast("Action failed. Please try again.", "error");
     } finally {
       setProcessing(false);
     }
-  }, [job, toast]);
-
-  // ─── Actions ──────────────────────────────────────────────────────────────
-  const selectWorker = (uid: string) =>
-    updateJob({ selectedUser: uid, status: "assigned" }, "Worker assigned!");
-
-  const promoteBackup = () => {
-    const backup = job?.applicants?.find((u) => u !== job?.selectedUser);
-    if (!backup) {
-      toast("No backup applicant available", "info");
-      return;
-    }
-    updateJob({ selectedUser: backup, confirmed: false, checkIn: false, status: "assigned" }, "Backup promoted!");
   };
 
-  const markCompleted = () =>
-    updateJob({ status: "completed", completed: true, paymentStatus: "pending" }, "Job marked complete!");
+  const promoteBackup = async () => {
+    if (!job) return;
+    setProcessing(true);
+    try {
+      const updated = await promoteBackupApi(job.jobId);
+      setJob(updated as Job);
+      toast("Backup promoted!", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "No backup applicant available";
+      toast(msg, "info");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-  const markPaid = () =>
-    updateJob({ paymentStatus: "paid" }, "Payment marked! ✅");
+  const handleMarkCompleted = async () => {
+    if (!job) return;
+    setProcessing(true);
+    try {
+      const updated = await markComplete(job.jobId);
+      setJob(updated as Job);
+      toast("Job marked complete!", "success");
+    } catch {
+      toast("Action failed. Please try again.", "error");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!job) return;
+    setProcessing(true);
+    try {
+      const updated = await markPaid(job.jobId);
+      setJob(updated as Job);
+      toast("Payment marked! ✅", "success");
+    } catch {
+      toast("Action failed. Please try again.", "error");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   // ─── Loading states ───────────────────────────────────────────────────────
   if (authLoading || loading) {
@@ -236,7 +262,7 @@ export default function JobDetailPage() {
                 <div className="bg-error-bg/20 border border-error-bg/40 p-4 rounded-xl mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-error-text font-semibold">Worker not confirmed yet</p>
-                    <p className="text-xs text-text-muted mt-0.5">If they don't respond, promote a backup</p>
+                    <p className="text-xs text-text-muted mt-0.5">If they don&apos;t respond, promote a backup</p>
                   </div>
                   <button
                     onClick={promoteBackup}
@@ -264,7 +290,7 @@ export default function JobDetailPage() {
 
               {job.status === "in-progress" && (
                 <button
-                  onClick={markCompleted}
+                  onClick={handleMarkCompleted}
                   disabled={processing}
                   className="bg-primary-500 hover:bg-primary-600 font-semibold text-white px-5 py-3 rounded-xl mt-6 w-full md:w-auto shadow-md transition disabled:opacity-50"
                 >
@@ -274,7 +300,7 @@ export default function JobDetailPage() {
 
               {job.status === "completed" && job.paymentStatus !== "paid" && (
                 <button
-                  onClick={markPaid}
+                  onClick={handleMarkPaid}
                   disabled={processing}
                   className="bg-success-text hover:bg-emerald-600 font-semibold text-white px-5 py-3 rounded-xl mt-6 w-full md:w-auto shadow-md transition disabled:opacity-50"
                 >

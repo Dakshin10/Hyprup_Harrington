@@ -3,9 +3,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
 import { useToast } from "@/hooks/useToast";
-import { doc, setDoc, getDocs, query, collection, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useState, useEffect, useMemo, memo } from "react";
+import { updateBusinessProfile, getStats } from "@/services/userService";
+import { useState, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { PageWrapper } from "@/components/MotionWrappers";
@@ -57,29 +56,15 @@ export default function BusinessProfilePage() {
     }
   }, [userData]);
 
-  // Fetch stats once (getDocs)
+  // Fetch stats via API
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
 
-    const fetchStats = async () => {
-      try {
-        const snap = await getDocs(
-          query(collection(db, "jobs"), where("createdBy", "==", user.uid))
-        );
-        if (cancelled) return;
-        const jobsList = snap.docs.map((d) => d.data());
-        setStats({
-          jobs: jobsList.length,
-          completed: jobsList.filter((j) => j.status === "completed").length,
-          repeat: jobsList.filter((j) => j.repeatHire).length,
-        });
-      } catch (err) {
-        console.error("[BusinessProfile] stats error:", err);
-      }
-    };
+    getStats(user.uid)
+      .then((s) => { if (!cancelled) setStats(s); })
+      .catch((err) => console.error("[BusinessProfile] stats error:", err));
 
-    fetchStats();
     return () => { cancelled = true; };
   }, [user]);
 
@@ -88,7 +73,7 @@ export default function BusinessProfilePage() {
     if (!user) return;
     setSaving(true);
     try {
-      await setDoc(doc(db, "businessProfiles", user.uid), form, { merge: true });
+      await updateBusinessProfile(user.uid, form);
       toast("Profile saved!", "success");
       setEditing(false);
     } catch {

@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  getDoc,
-  doc,
-} from "firebase/firestore";
+import { useState, useMemo, useCallback, memo, useEffect } from "react";
 import { useJobs } from "@/hooks/useJobs";
 import { useStore } from "@/store/useStore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
+import { repostJob } from "@/services/jobService";
+import { getUserProfile } from "@/services/userService";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper } from "@/components/MotionWrappers";
@@ -40,15 +34,9 @@ const WorkerCell = memo(function WorkerCell({ uid }: { uid: string }) {
 
   useEffect(() => {
     let alive = true;
-    const fetchUser = async () => {
-      try {
-        const snap = await getDoc(doc(db, "users", uid));
-        if (alive && snap.exists()) setEmail(snap.data().email);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchUser();
+    getUserProfile(uid)
+      .then((profile) => { if (alive && profile?.email) setEmail(profile.email); })
+      .catch(console.error);
     return () => { alive = false; };
   }, [uid]);
 
@@ -127,23 +115,14 @@ export default function BusinessJobsPage() {
 
   // ─── Repost handler ───────────────────────────────────────────────────────
   const handleRepost = useCallback(async (job: any) => {
-    const newJob = {
-      ...job,
-      applicants: [],
-      selectedUser: null,
-      status: "open",
-      createdAt: Date.now(),
-      jobId: undefined,
-    };
     try {
-      const docRef = await addDoc(collection(db, "jobs"), newJob);
-      await updateDoc(doc(db, "jobs", docRef.id), { jobId: docRef.id });
-      setJobs([{ ...newJob, jobId: docRef.id }, ...jobs]);
+      const newJob = await repostJob(job.jobId);
+      setJobs([newJob, ...jobs]);
       toast("🚀 Job reposted successfully!", "success");
     } catch {
       toast("Failed to repost job", "error");
     }
-  }, [toast]);
+  }, [jobs, toast, setJobs]);
 
   // ─── Filtered list (memoized) ─────────────────────────────────────────────
   const filtered = useMemo(() => {

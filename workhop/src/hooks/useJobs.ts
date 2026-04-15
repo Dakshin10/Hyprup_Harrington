@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  limit,
-  QueryConstraint,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getJobs } from "@/services/jobService";
 import { Job } from "@/types/job";
 import { useStore } from "@/store/useStore";
 
@@ -41,22 +33,12 @@ export const useJobs = (options: UseJobsOptions = {}) => {
       setError(null);
 
       try {
-        const constraints: QueryConstraint[] = [];
-
-        if (createdBy) constraints.push(where("createdBy", "==", createdBy));
-        if (status) constraints.push(where("status", "==", status));
-        if (applicantsContain)
-          constraints.push(where("applicants", "array-contains", applicantsContain));
-
-        constraints.push(limit(maxResults));
-
-        const q = query(collection(db, "jobs"), ...constraints);
-        const snapshot = await getDocs(q);
-
-        const fetched: Job[] = snapshot.docs.map((d) => ({
-          jobId: d.id,
-          ...(d.data() as Omit<Job, "jobId">),
-        }));
+        const fetched = await getJobs({
+          createdBy,
+          status,
+          applicant: applicantsContain,
+          limit: maxResults,
+        });
 
         fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         setJobs(fetched);
