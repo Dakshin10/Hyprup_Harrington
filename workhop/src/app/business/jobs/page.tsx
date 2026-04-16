@@ -154,7 +154,7 @@ export default function BusinessJobsPage() {
         <div className="p-6 space-y-6">
 
           {/* HEADER */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-text-primary">Job Tracker</h1>
               <p className="text-text-muted">Manage and track all jobs</p>
@@ -208,7 +208,7 @@ export default function BusinessJobsPage() {
             </div>
           ) : (
             <AnimatePresence>
-              <motion.div layout className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <motion.div layout className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filtered.map((job) => (
                   <JobCard key={job.jobId} job={job} onRepost={handleRepost} />
                 ))}

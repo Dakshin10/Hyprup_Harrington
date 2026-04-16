@@ -4,9 +4,9 @@ import Link from "next/link";
 
 export const Footer = () => {
   return (
-    <footer className="py-16 px-6 border-t border-white/5 bg-black">
+    <footer className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-t border-white/5 bg-black">
       <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 mb-10 md:mb-12">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 group mb-6">
               <div className="w-8 h-8 bg-gradient-to-tr from-primary-500 to-primary-600 rounded-lg flex items-center justify-center font-bold text-lg text-white">
@@ -38,9 +38,9 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-text-muted">
-          <p>© {new Date().getFullYear()} WorkHop. Built for hackathon demo.</p>
-          <div className="flex gap-6">
+        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center md:items-center gap-6 text-xs text-text-muted">
+          <p className="text-center md:text-left">© {new Date().getFullYear()} WorkHop. Built for hackathon demo.</p>
+          <div className="flex flex-wrap justify-center gap-6">
             <a href="#" className="hover:text-white transition-colors">Twitter</a>
             <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
             <a href="#" className="hover:text-white transition-colors">GitHub</a>

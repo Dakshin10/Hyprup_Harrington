@@ -28,7 +28,7 @@ export const JobList = ({ jobs, onViewApplicants, onManageJob, onCancel }: JobLi
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8"
     >
       {jobs.map((job) => (
         <JobCard

@@ -85,40 +85,71 @@ export const Navbar = () => {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-bg-card border-b border-white/10 overflow-hidden"
-          >
-            <div className="flex flex-col p-6 gap-4">
-              {navLinks.map((link) => (
-                <a 
-                  key={link.name} 
-                  href={link.href}
+          <>
+            {/* Backdrop overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="md:hidden fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm"
+              aria-hidden="true"
+            />
+            
+            {/* Slide-in Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="md:hidden fixed top-0 right-0 bottom-0 w-[80%] max-w-sm bg-bg-main z-[100] border-l border-white/10 shadow-2xl flex flex-col"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <span className="font-extrabold text-xl tracking-tight text-white">Menu</span>
+                <button 
+                  className="text-text-secondary hover:text-white transition-colors p-2 -mr-2"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-lg font-medium text-text-secondary"
+                  aria-label="Close menu"
                 >
-                  {link.name}
-                </a>
-              ))}
-              <hr className="border-white/5" />
-              <Link 
-                href="/login" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-lg font-medium text-text-secondary"
-              >
-                Login
-              </Link>
-              <Link 
-                href="/login" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="bg-primary-500 text-white font-bold py-4 rounded-2xl text-center"
-              >
-                Get Started
-              </Link>
-            </div>
-          </motion.div>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="flex flex-col p-6 gap-6 overflow-y-auto flex-1 h-full">
+                {navLinks.map((link) => (
+                  <a 
+                    key={link.name} 
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-xl font-medium text-text-secondary hover:text-white transition-colors"
+                  >
+                    {link.name}
+                  </a>
+                ))}
+                
+                <hr className="border-white/5 my-2" />
+                
+                <div className="flex flex-col gap-4 mt-auto mb-8">
+                  <Link 
+                    href="/login" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="min-h-[44px] flex items-center justify-center text-lg font-medium text-white transition-colors w-full border border-white/20 rounded-xl hover:bg-white/5"
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    href="/login" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="min-h-[44px] flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary-500/20 w-full"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>

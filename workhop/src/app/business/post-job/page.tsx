@@ -286,7 +286,7 @@ export default function PostJobPage() {
                   Job Details
                 </h3>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-text-muted uppercase font-bold px-1">Payment</label>
                     <input
@@ -323,7 +323,7 @@ export default function PostJobPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] text-text-muted uppercase font-bold px-1">Job Date</label>
                     <input

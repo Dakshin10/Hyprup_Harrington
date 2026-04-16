@@ -98,13 +98,13 @@ export default function StudentProfile() {
 
         {/* STATS */}
         {loading ? (
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="p-4 bg-bg-card border border-white/10 rounded-2xl animate-pulse h-24" />
             ))}
           </div>
         ) : (
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <MotionCard className="p-4 bg-bg-card border border-white/10 rounded-2xl">
               <p className="text-sm text-text-muted">Earnings</p>
               <h2 className="text-xl font-bold text-primary-500">₹{stats.totalEarnings}</h2>

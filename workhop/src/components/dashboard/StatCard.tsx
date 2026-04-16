@@ -21,7 +21,7 @@ export const StatCard = memo(function StatCard({
     <motion.div
       whileHover={{ scale: 1.05 }}
       transition={{ type: "spring", stiffness: 300 }}
-      className="bg-bg-card p-6 rounded-2xl border border-white/10 shadow-lg flex flex-col justify-between hover:border-primary-500/30 transition-colors"
+      className="bg-bg-card p-4 sm:p-6 rounded-2xl border border-white/10 shadow-lg flex flex-col justify-between hover:border-primary-500/30 transition-colors"
     >
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-text-secondary font-bold uppercase tracking-wider">{label}</p>

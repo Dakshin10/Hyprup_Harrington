@@ -137,7 +137,7 @@ const LoginPage = () => {
       </div>
 
       {/* Form Side */}
-      <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 sm:px-24">
+      <div className="flex flex-col justify-center w-full lg:w-1/2 px-6 sm:px-12 md:px-24 lg:px-16 xl:px-24 py-12 lg:py-0">
         <div className="max-w-md w-full mx-auto">
           {/* Header Bar with Logo (Mobile) and Role Switch */}
           <div className="flex justify-between items-center mb-8">

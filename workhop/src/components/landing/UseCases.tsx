@@ -32,7 +32,7 @@ const useCases = [
 
 export const UseCases = () => {
   return (
-    <section id="use-cases" className="py-24 px-6 overflow-hidden">
+    <section id="use-cases" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -41,12 +41,12 @@ export const UseCases = () => {
           className="text-center mb-16"
         >
           <span className="text-primary-500 font-bold text-sm uppercase tracking-widest">Relatable Scenarios</span>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mt-3">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mt-3">
             Designed for real-world tasks
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {useCases.map((uc, i) => (
             <motion.div
               key={i}
@@ -55,7 +55,7 @@ export const UseCases = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -10 }}
-              className="group relative h-[400px] rounded-[2rem] overflow-hidden border border-white/10"
+              className="group relative h-[320px] sm:h-[400px] rounded-[2rem] overflow-hidden border border-white/10"
             >
               <img 
                 src={uc.image} 

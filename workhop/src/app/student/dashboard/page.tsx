@@ -180,13 +180,13 @@ const StudentDashboard = () => {
         {/* STATS */}
         <section className="mb-10">
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="p-6 bg-bg-card border border-white/10 rounded-2xl animate-pulse h-28" />
+                <div key={i} className="p-4 sm:p-6 bg-bg-card border border-white/10 rounded-2xl animate-pulse h-28" />
               ))}
             </div>
           ) : (
-            <StaggerContainer className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
               <MotionCard className="p-6 bg-bg-card border border-white/10 rounded-2xl">
                 <p className="text-sm text-text-muted">Earnings</p>
                 <h2 className="text-3xl font-bold text-primary-500">₹{stats.totalEarnings}</h2>
@@ -225,7 +225,7 @@ const StudentDashboard = () => {
               <div key={job.jobId} className="p-6 bg-bg-card border border-white/10 rounded-xl mb-4">
                 <h3 className="font-bold text-text-primary">{job.title}</h3>
                 <p className="text-sm text-text-muted mt-1">₹{job.payment} • {job.duration}h</p>
-                <div className="mt-4 flex gap-3">
+                <div className="mt-4 flex flex-col sm:flex-row gap-3 w-full">
                   {!job.confirmed && (
                     <MotionButton
                       onClick={() => handleAction(job.jobId, "confirm")}
@@ -302,13 +302,13 @@ const StudentDashboard = () => {
             </div>
           </div>
           {loading ? (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-28 bg-bg-card animate-pulse rounded-xl border border-white/10" />
               ))}
             </div>
           ) : openJobs.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {openJobs.slice(0, 3).map((job) => (
                 <Link key={job.jobId} href={`/student/job/${job.jobId}`}>
                   <div className="p-4 bg-bg-card border border-white/10 rounded-xl hover:border-primary-500/40 transition-colors cursor-pointer h-full">

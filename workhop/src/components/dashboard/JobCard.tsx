@@ -58,7 +58,7 @@ export const JobCard = ({ job, onViewApplicants, onManageJob, onCancel }: JobCar
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
           {job.status === "open" ? (
             <Button
               variant="primary"
@@ -80,7 +80,7 @@ export const JobCard = ({ job, onViewApplicants, onManageJob, onCancel }: JobCar
           {job.status !== "completed" && job.status !== "cancelled" && (
             <button
               onClick={() => onCancel(job.jobId)}
-              className="px-4 py-2 text-xs font-bold text-error-text hover:bg-error-bg/10 rounded-xl transition-colors border border-transparent hover:border-error-text/20"
+              className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-error-text hover:bg-error-bg/10 rounded-xl transition-colors border border-transparent hover:border-error-text/20"
             >
               Cancel
             </button>

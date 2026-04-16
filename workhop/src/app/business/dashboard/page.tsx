@@ -120,7 +120,7 @@ export default function BusinessDashboard() {
       <div className="p-6 space-y-8">
 
         {/* HEADER + CTA */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-text-primary">Overview</h1>
             <p className="text-text-muted">Monitor your micro-job performance and applications</p>
@@ -136,13 +136,13 @@ export default function BusinessDashboard() {
 
         {/* STATS */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-32 bg-bg-card border border-white/10 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Jobs" value={stats.totalJobs} icon={Briefcase} />
             <StatCard label="Active" value={stats.activeJobs} icon={Activity} />
             <StatCard label="Completed" value={stats.completedJobs} icon={CheckCircle} />
@@ -152,12 +152,12 @@ export default function BusinessDashboard() {
 
         {/* FINANCIAL PANEL */}
         {!loading && (
-          <div className="bg-bg-card border border-white/10 shadow-lg p-6 rounded-2xl flex justify-between">
+          <div className="bg-bg-card border border-white/10 shadow-lg p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between gap-4">
             <div>
               <p className="text-text-muted text-sm">Total Spent</p>
               <h2 className="text-3xl font-bold text-success-text">₹{stats.totalSpent}</h2>
             </div>
-            <div className="text-right">
+            <div className="text-left sm:text-right">
               <p className="text-text-muted text-sm">This Week</p>
               <h2 className="text-xl font-bold text-success-text">+₹{stats.weeklySpending}</h2>
             </div>
@@ -166,7 +166,7 @@ export default function BusinessDashboard() {
 
         {/* JOB SECTION */}
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h2 className="text-xl font-bold text-text-primary">Manage Listings</h2>
 
             <div className="flex bg-bg-hover border border-white/5 p-1 rounded-xl">

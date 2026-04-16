@@ -183,7 +183,7 @@ export default function BusinessProfilePage() {
             </motion.div>
 
             {/* STATS */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Stat label="Jobs Posted" value={stats.jobs} />
               <Stat label="Completed" value={stats.completed} />
               <Stat label="Repeat Hires" value={stats.repeat} />

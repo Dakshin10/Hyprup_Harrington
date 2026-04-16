@@ -67,7 +67,7 @@ export default function Hero() {
             📍 Hyperlocal Micro-Job Platform
           </motion.div>
 
-          <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold text-text-primary leading-[1.1] tracking-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold text-text-primary leading-[1.1] tracking-tight">
             Connect Students with <br />
             <span className="bg-gradient-to-r from-primary-500 via-orange-400 to-yellow-400 bg-clip-text text-transparent">
               Nearby Work
@@ -75,17 +75,17 @@ export default function Hero() {
             {" — "}Instantly
           </h1>
 
-          <p className="text-xl text-text-secondary max-w-lg leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-text-secondary max-w-lg leading-relaxed">
             Businesses post short jobs. <span className="text-text-primary font-semibold">Students discover and earn within minutes.</span>
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full">
             <motion.button 
               whileHover={{ scale: 1.04 }} 
               whileTap={{ scale: 0.97 }}
               onClick={handleStart}
-              className="inline-flex items-center gap-2 px-10 py-5 bg-primary-500 text-white font-extrabold rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-600 transition-all text-xl group"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-primary-500 text-white font-extrabold rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-600 transition-all text-lg sm:text-xl group"
             >
               Get Started
               <ChevronIcon size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -94,24 +94,24 @@ export default function Hero() {
               whileHover={{ scale: 1.04 }} 
               whileTap={{ scale: 0.97 }}
               onClick={handleStart}
-              className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-extrabold rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-xl"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-white text-black font-extrabold rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-lg sm:text-xl"
             >
               Sign In
             </motion.button>
           </div>
 
           {/* Social proof */}
-          <div className="flex items-center gap-6 text-sm text-text-muted pt-2">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-text-muted pt-2 justify-center sm:justify-start">
             <div className="flex items-center gap-2">
               <span className="text-success-text font-bold text-base">500+</span>
               <span>Jobs Posted</span>
             </div>
-            <div className="w-px h-4 bg-white/10" />
+            <div className="hidden sm:block w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2">
               <span className="text-primary-500 font-bold text-base">1.2K</span>
               <span>Students</span>
             </div>
-            <div className="w-px h-4 bg-white/10" />
+            <div className="hidden sm:block w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2">
               <span className="text-warning-text font-bold text-base">&lt;5 min</span>
               <span>Hiring Time</span>

@@ -26,7 +26,7 @@ const steps = [
 
 export const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 px-6 bg-slate-900/50">
+    <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -35,12 +35,12 @@ export const HowItWorks = () => {
           className="text-center mb-16"
         >
           <span className="text-text-muted font-bold text-sm uppercase tracking-widest">The Process</span>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mt-3">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mt-3">
             Simple steps to get started
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {steps.map((step, i) => (
             <motion.div
               key={i}
@@ -49,7 +49,7 @@ export const HowItWorks = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              className={`p-8 rounded-[2.5rem] bg-bg-card border ${step.color} shadow-xl hover:shadow-primary-500/5 transition-all`}
+              className={`p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-bg-card border ${step.color} shadow-xl hover:shadow-primary-500/5 transition-all`}
             >
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8">
                 {step.icon}
