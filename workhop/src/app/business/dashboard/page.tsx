@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useJobs } from "@/hooks/useJobs";
+import { deleteJob } from "@/services/jobService";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
@@ -28,7 +29,7 @@ export default function BusinessDashboard() {
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
-  const { jobs, loading } = useJobs({
+  const { jobs, loading, refetch } = useJobs({
     createdBy: user?.uid,
     maxResults: 20,
     skip: authLoading || !user || role !== "business",
@@ -50,6 +51,21 @@ export default function BusinessDashboard() {
   const handleManageJob = (jobId: string) => {
     // Navigation handled by Link in JobCard — no router.push needed
     void jobId;
+  };
+
+  const handleCancelJob = async (jobId: string) => {
+    if (!user) return;
+    
+    const confirmText = "Are you sure you want to cancel this job? This action cannot be undone.";
+    if (!window.confirm(confirmText)) return;
+
+    try {
+      const res = await deleteJob(jobId, user.uid);
+      toast(res.message, "success");
+      refetch();
+    } catch (err: any) {
+      toast(err.message || "Failed to cancel job", "error");
+    }
   };
 
   // ─── Stats (memoized) ────────────────────────────────────────────────────
@@ -196,6 +212,7 @@ export default function BusinessDashboard() {
                   jobs={displayedJobs}
                   onViewApplicants={handleViewApplicants}
                   onManageJob={handleManageJob}
+                  onCancel={handleCancelJob}
                 />
               </motion.div>
             </AnimatePresence>

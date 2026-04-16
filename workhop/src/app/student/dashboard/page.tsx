@@ -77,7 +77,7 @@ const StudentDashboard = () => {
     const fetchActive = async () => {
       try {
         const jobs = await getJobs({ applicant: user.uid, limit: 10 });
-        const active = jobs.filter((j) => j.selectedUser === user.uid && !j.completed);
+        const active = jobs.filter((j) => j.assignedUsers?.includes(user.uid) && !j.completed);
         setActiveJobs(active);
       } catch (err) {
         console.error("[StudentDashboard] active jobs poll error:", err);
@@ -126,7 +126,7 @@ const StudentDashboard = () => {
   const stats = useMemo(() => {
     if (!user) return { pastJobs: [], totalEarnings: 0, jobsCompleted: 0, reliability: 0, progress: 0 };
 
-    const pastJobs = myJobs.filter((j) => j.selectedUser === user.uid && j.completed);
+    const pastJobs = myJobs.filter((j) => j.assignedUsers?.includes(user.uid) && j.completed);
     const totalEarnings = pastJobs
       .filter((j) => j.paymentStatus === "paid")
       .reduce((sum, j) => sum + Number(j.payment || 0), 0);

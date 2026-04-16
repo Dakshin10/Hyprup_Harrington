@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-center";
 import { ChevronRight as ChevronIcon } from "lucide-react";
 
 const floatingCards = [

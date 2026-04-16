@@ -26,7 +26,7 @@ interface JobForm {
   address: string;
   isUrgent: boolean;
   jobType: "instant" | "scheduled";
-  slots: number;
+  peopleRequired: number;
   date: string; // 🔥 Added
   time: string; // 🔥 Added
 }
@@ -49,7 +49,7 @@ export default function PostJobPage() {
     address: "",
     isUrgent: false,
     jobType: "instant",
-    slots: 1,
+    peopleRequired: 1,
     date: new Date().toISOString().split("T")[0],
     time: "12:00",
   });
@@ -167,6 +167,10 @@ export default function PostJobPage() {
     if (!form.title || !form.address) {
       return setError("Title and map location required");
     }
+    
+    if (!user) {
+      return setError("User not found or unauthorised");
+    }
 
     try {
       setLoading(true);
@@ -282,23 +286,41 @@ export default function PostJobPage() {
                   Job Details
                 </h3>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="number"
-                    value={form.payment}
-                    onChange={(e) => update("payment", e.target.value)}
-                    className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
-                  />
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-text-muted uppercase font-bold px-1">Payment</label>
+                    <input
+                      type="number"
+                      value={form.payment}
+                      onChange={(e) => update("payment", e.target.value)}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
+                    />
+                  </div>
 
-                  <select
-                    value={form.duration}
-                    onChange={(e) => update("duration", Number(e.target.value))}
-                    className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 outline-none transition"
-                  >
-                    <option value={1}>1 hr</option>
-                    <option value={2}>2 hr</option>
-                    <option value={3}>3 hr</option>
-                  </select>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-text-muted uppercase font-bold px-1">Duration</label>
+                    <select
+                      value={form.duration}
+                      onChange={(e) => update("duration", Number(e.target.value))}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 outline-none transition"
+                    >
+                      <option value={1}>1 hr</option>
+                      <option value={2}>2 hr</option>
+                      <option value={3}>3 hr</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-text-muted uppercase font-bold px-1">People Needed</label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Number of people needed"
+                      value={form.peopleRequired}
+                      onChange={(e) => update("peopleRequired", Number(e.target.value))}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

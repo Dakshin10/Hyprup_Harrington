@@ -13,8 +13,8 @@ export interface Job {
 
   createdBy: string;
   applicants: string[];
-  selectedUser: string | null;
-  status: "open" | "closed" | "in-progress" | "assigned" | "completed" | "cancelled";
+  assignedUsers: string[];
+  status: "open" | "full" | "closed" | "in-progress" | "assigned" | "completed" | "cancelled";
   date?: string;
   time?: string;
   businessName?: string;
@@ -34,6 +34,6 @@ export interface Job {
   paymentStatus?: "pending" | "paid";
   isUrgent?: boolean;
   jobType?: "instant" | "scheduled";
-  slots?: number;
+  peopleRequired?: number;
   createdAt: number;
 }

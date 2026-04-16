@@ -10,9 +10,10 @@ interface JobCardProps {
   job: Job;
   onViewApplicants: (jobId: string) => void;
   onManageJob: (jobId: string) => void;
+  onCancel: (jobId: string) => void;
 }
 
-export const JobCard = ({ job, onViewApplicants, onManageJob }: JobCardProps) => {
+export const JobCard = ({ job, onViewApplicants, onManageJob, onCancel }: JobCardProps) => {
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -74,6 +75,15 @@ export const JobCard = ({ job, onViewApplicants, onManageJob }: JobCardProps) =>
             >
               Manage Job
             </Button>
+          )}
+
+          {job.status !== "completed" && job.status !== "cancelled" && (
+            <button
+              onClick={() => onCancel(job.jobId)}
+              className="px-4 py-2 text-xs font-bold text-error-text hover:bg-error-bg/10 rounded-xl transition-colors border border-transparent hover:border-error-text/20"
+            >
+              Cancel
+            </button>
           )}
         </div>
       </div>

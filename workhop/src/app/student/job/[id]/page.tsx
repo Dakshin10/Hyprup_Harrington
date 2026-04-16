@@ -77,9 +77,10 @@ export default function StudentJobDetails() {
     );
   }
 
-  const isAssignedToMe = job.selectedUser === user?.uid;
-  const isTaken = job.status === "assigned" && !isAssignedToMe;
+  const isAssignedToMe = job.assignedUsers?.includes(user?.uid);
   const isCancelled = job.status === "cancelled";
+  const slotsLeft = job.peopleRequired - (job.assignedUsers?.length || 0);
+  const isFull = job.status === "full" || slotsLeft <= 0;
 
   return (
     <>
@@ -101,18 +102,18 @@ export default function StudentJobDetails() {
 
           <div className="mb-4">
              <span className={`text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border ${
-               job.status === 'open' ? 'border-success-text/40 text-success-text bg-success-bg/10' :
+              job.status === 'open' && !isFull ? 'border-success-text/40 text-success-text bg-success-bg/10' :
                isAssignedToMe ? 'border-primary-500/40 text-primary-400 bg-primary-500/10' :
                'border-error-text/40 text-error-text bg-error-bg/10'
              }`}>
-               {isAssignedToMe ? 'Your Assigned Job' : job.status}
+               {isAssignedToMe ? 'Joined' : isFull ? 'Full' : job.status}
              </span>
           </div>
 
           <h1 className="text-3xl font-bold text-text-primary mb-2">{job.title}</h1>
           <p className="text-text-muted leading-relaxed mb-6">{job.description}</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-white/5">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 py-6 border-y border-white/5">
             <div>
               <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest mb-1">Pay</p>
               <p className="text-xl font-bold text-success-text">₹{job.payment}</p>
@@ -128,8 +129,14 @@ export default function StudentJobDetails() {
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest mb-1">Start Time</p>
+              <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest mb-1">Time</p>
               <p className="text-lg font-bold text-text-primary">{job.time || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-text-muted uppercase font-bold tracking-widest mb-1">Slots Left</p>
+              <p className="text-lg font-bold text-primary-500">
+                {job.assignedUsers?.length || 0} / {job.peopleRequired} joined
+              </p>
             </div>
           </div>
         </div>
@@ -143,7 +150,7 @@ export default function StudentJobDetails() {
               <div className="h-[250px] rounded-xl overflow-hidden mb-4 border border-white/5">
                 <MapComponent 
                   initialLocation={[job.location.coordinates[1], job.location.coordinates[0]]}
-                  readonly={true}
+                  readOnly={true}
                 />
               </div>
               <p className="text-sm text-text-muted flex items-start gap-2">
@@ -167,25 +174,28 @@ export default function StudentJobDetails() {
             </div>
 
             <div className="bg-bg-card border border-white/10 rounded-2xl p-6 shadow-lg">
-               {job.status === "open" ? (
-                 <button
-                   onClick={handleAccept}
-                   disabled={processing}
-                   className="w-full py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold rounded-xl shadow-lg hover:shadow-primary-500/20 hover:-translate-y-1 transition disabled:opacity-50"
-                 >
-                   {processing ? "Securing Job..." : "Accept Job"}
-                 </button>
-               ) : isAssignedToMe ? (
+               {isAssignedToMe ? (
                  <div className="text-center">
                     <div className="w-12 h-12 bg-success-bg/20 rounded-full flex items-center justify-center mx-auto mb-3">
                       <span className="text-success-text text-xl">✓</span>
                     </div>
-                    <p className="font-bold text-success-text">This Job is Yours!</p>
+                    <p className="font-bold text-success-text">Joined</p>
                     <p className="text-[10px] text-text-muted mt-2">Check your dashboard for execution steps.</p>
                  </div>
+               ) : slotsLeft > 0 && !isCancelled ? (
+                 <>
+                   <button
+                     onClick={handleAccept}
+                     disabled={processing}
+                     className="w-full py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold rounded-xl shadow-lg hover:shadow-primary-500/20 hover:-translate-y-1 transition disabled:opacity-50"
+                   >
+                     {processing ? "Securing Job..." : "Accept Job"}
+                   </button>
+                   <p className="text-center text-sm mt-4 text-text-muted">{slotsLeft} spots left</p>
+                 </>
                ) : (
                  <div className="text-center opacity-50">
-                    <p className="font-bold text-text-muted">{isCancelled ? 'Job Cancelled' : 'Already Taken'}</p>
+                    <p className="font-bold text-text-muted">{isCancelled ? 'Job Cancelled' : 'Full'}</p>
                     <p className="text-[10px] text-text-muted mt-1">Look for other open jobs.</p>
                  </div>
                )}

@@ -27,11 +27,12 @@ const JobSchema = new mongoose.Schema({
   businessName: { type: String }, // For easier display on student side
   
   applicants: { type: [String], default: [] },
-  selectedUser: { type: String, default: null }, // This is the studentId assigned to the job
+  assignedUsers: { type: [String], default: [] }, // 🔥 array of student IDs
+  peopleRequired: { type: Number, default: 1 }, // 🔥 NEW
   
   status: {
     type: String,
-    enum: ["open", "closed", "in-progress", "assigned", "completed", "cancelled"], // 🔥 Added cancelled
+    enum: ["open", "full", "closed", "in-progress", "assigned", "completed", "cancelled"], // 🔥 Added cancelled and full
     default: "open",
   },
   
@@ -53,7 +54,6 @@ const JobSchema = new mongoose.Schema({
     enum: ["instant", "scheduled"],
     default: "scheduled",
   },
-  slots: { type: Number, default: 1 },
   createdAt: { type: Number, default: Date.now },
 });
 

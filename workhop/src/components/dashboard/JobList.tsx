@@ -9,6 +9,7 @@ interface JobListProps {
   jobs: Job[];
   onViewApplicants: (jobId: string) => void;
   onManageJob: (jobId: string) => void;
+  onCancel: (jobId: string) => void;
 }
 
 const containerVariants = {
@@ -21,7 +22,7 @@ const containerVariants = {
   }
 };
 
-export const JobList = ({ jobs, onViewApplicants, onManageJob }: JobListProps) => {
+export const JobList = ({ jobs, onViewApplicants, onManageJob, onCancel }: JobListProps) => {
   return (
     <motion.div
       variants={containerVariants}
@@ -35,6 +36,7 @@ export const JobList = ({ jobs, onViewApplicants, onManageJob }: JobListProps) =
           job={job}
           onViewApplicants={onViewApplicants}
           onManageJob={onManageJob}
+          onCancel={onCancel}
         />
       ))}
     </motion.div>

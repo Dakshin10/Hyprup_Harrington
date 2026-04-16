@@ -41,47 +41,79 @@ export async function PATCH(
       const job = await Job.findOne({ jobId: id });
       if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
-      if (job.status !== "open") {
-        return NextResponse.json({ error: "Job already taken or closed" }, { status: 409 });
+      // ❌ already full
+      if (job.assignedUsers.length >= job.peopleRequired) {
+        return NextResponse.json({ error: "Job is full" }, { status: 409 });
       }
 
-      // Lock it
-      job.status = "assigned";
-      job.selectedUser = studentId;
-      job.confirmed = true; // Auto-confirm on accept for this lifecycle
+      // ❌ already accepted by same student
+      if (job.assignedUsers.includes(studentId)) {
+        return NextResponse.json({ error: "Already joined" }, { status: 409 });
+      }
+
+      // ✅ add student
+      job.assignedUsers.push(studentId);
+
+      // 🔥 if full → update status
+      if (job.assignedUsers.length >= job.peopleRequired) {
+        job.status = "full";
+      }
+
       await job.save();
 
       // Notify Business
       await Notification.create({
         userId: job.createdBy,
         jobId: job.jobId,
-        message: `Your job "${job.title}" has been accepted by a student!`,
+        message: `1 student joined your job "${job.title}"`,
         type: "assigned"
       });
+
+      if (job.status === "full") {
+        await Notification.create({
+          userId: job.createdBy,
+          jobId: job.jobId,
+          message: `Your job "${job.title}" is fully booked`,
+          type: "full"
+        });
+      }
 
       return NextResponse.json(job);
     }
 
-    // ❌ CANCELLATION LOGIC
+    // 👤 STUDENT CANCELLATION LOGIC
+    if (action === "student_cancel") {
+      if (!studentId) return NextResponse.json({ error: "Student ID required" }, { status: 400 });
+      const job = await Job.findOne({ jobId: id });
+      if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
+
+      job.assignedUsers = job.assignedUsers.filter((uid: string) => uid !== studentId);
+      job.status = "open";
+      await job.save();
+
+      return NextResponse.json(job);
+    }
+
+    // ❌ BUSINESS CANCELLATION LOGIC
     if (action === "cancel") {
       const job = await Job.findOne({ jobId: id });
       if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
-      const prevStudent = job.selectedUser;
+      const prevStudents = job.assignedUsers || [];
       job.status = "cancelled";
       await job.save();
 
-      // Notify Student if one was assigned
-      if (prevStudent) {
+      // Notify Students if any were assigned
+      for (const student of prevStudents) {
         await Notification.create({
-          userId: prevStudent,
+          userId: student,
           jobId: job.jobId,
           message: `The job "${job.title}" has been cancelled by the business.`,
           type: "cancelled"
         });
       }
 
-      return NextResponse.json({ message: "Job cancelled", notifyUser: prevStudent });
+      return NextResponse.json({ message: "Job cancelled", notifyUsers: prevStudents });
     }
 
     // Standard update
@@ -109,13 +141,51 @@ export async function DELETE(
   try {
     await connectDB();
     const { id } = await params;
+    const { userId } = await req.json();
 
-    const job = await Job.findOneAndDelete({ jobId: id });
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    const job = await Job.findOne({ jobId: id });
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
+    // 🔐 Ownership check
+    if (job.createdBy !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // 🔥 LOGIC: Delete if open, Cancel if assigned
+    if (job.status === "open") {
+      await Job.findOneAndDelete({ jobId: id });
+      return NextResponse.json({ message: "Job deleted successfully", action: "deleted" });
+    }
+
+    if (job.status === "assigned" || job.status === "in-progress" || job.status === "full") {
+      const prevStudents = job.assignedUsers || [];
+      job.status = "cancelled";
+      await job.save();
+
+      // Notify Students
+      for (const student of prevStudents) {
+        await Notification.create({
+          userId: student,
+          jobId: job.jobId,
+          message: `The job "${job.title}" has been cancelled by the business.`,
+          type: "cancelled"
+        });
+      }
+
+      return NextResponse.json({ 
+        message: "Job cancelled and students notified", 
+        action: "cancelled",
+        notifyUsers: prevStudents 
+      });
+    }
+
+    return NextResponse.json({ message: "Job is already completed or cancelled" });
   } catch (error: any) {
     console.error(`[API_JOB_DELETE] Error:`, error);
     return NextResponse.json({ error: error.message }, { status: 500 });

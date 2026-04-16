@@ -46,7 +46,8 @@ const INITIAL_JOBS: Job[] = [
     status: "open",
     createdBy: "business-1",
     applicants: [],
-    selectedUser: null,
+    assignedUsers: [],
+    peopleRequired: 1,
     createdAt: Date.now() - 3600000,
   },
   {
@@ -60,7 +61,8 @@ const INITIAL_JOBS: Job[] = [
     status: "open",
     createdBy: "business-2",
     applicants: [],
-    selectedUser: null,
+    assignedUsers: [],
+    peopleRequired: 1,
     createdAt: Date.now() - 7200000,
     isUrgent: true,
   }

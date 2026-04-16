@@ -46,7 +46,7 @@ export default function StudentProfile() {
   const stats = useMemo(() => {
     if (!user) return { completedJobs: [], totalEarnings: 0, reliability: 0, progress: 0 };
 
-    const completedJobs = jobs.filter((j) => j.selectedUser === user.uid && j.completed);
+    const completedJobs = jobs.filter((j) => j.assignedUsers?.includes(user.uid) && j.completed);
     const totalEarnings = completedJobs.reduce((sum, j) => sum + Number(j.payment || 0), 0);
     const reliability = jobs.length > 0 ? Math.round((completedJobs.length / jobs.length) * 100) : 0;
     const monthlyGoal = 5000;

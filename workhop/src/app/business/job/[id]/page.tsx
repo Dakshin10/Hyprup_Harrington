@@ -196,20 +196,20 @@ export default function JobDetailPage() {
             </button>
           </div>
 
-          {/* APPLICANTS */}
+          {/* ASSIGNED WORKERS */}
           <div className="bg-bg-card border border-white/10 rounded-2xl p-6 shadow-lg">
             <h2 className="font-bold text-lg mb-4 text-text-primary">
-              Applicants ({job.applicants?.length || 0})
+              Joined Workers ({job.assignedUsers?.length || 0} / {job.peopleRequired})
             </h2>
 
-            {!job.applicants?.length ? (
+            {!job.assignedUsers?.length ? (
               <div className="text-center text-text-muted py-8">
                 <p className="text-lg mb-1">👀</p>
-                <p className="font-medium">No applicants yet</p>
-                <p className="text-sm mt-1 text-text-muted">Share your job to get applicants faster</p>
+                <p className="font-medium">No one has joined yet</p>
+                <p className="text-sm mt-1 text-text-muted">Wait for students to accept</p>
               </div>
             ) : (
-              job.applicants.map((uid) => (
+              job.assignedUsers.map((uid) => (
                 <div
                   key={uid}
                   className="flex justify-between items-center border border-white/10 bg-bg-main p-4 rounded-xl mb-3 hover:border-primary-500/40 transition-colors"
@@ -217,29 +217,16 @@ export default function JobDetailPage() {
                   <span className="text-sm font-semibold text-text-primary truncate mr-4 font-mono">
                     {uid?.slice(0, 16) || "Anonymous"}…
                   </span>
-
-                  {!job.selectedUser && (
-                    <button
-                      onClick={() => selectWorker(uid)}
-                      disabled={processing}
-                      className="bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition disabled:opacity-50"
-                    >
-                      {processing ? "..." : "Select"}
-                    </button>
-                  )}
-
-                  {job.selectedUser === uid && (
-                    <span className="text-success-text font-bold text-sm bg-success-bg/30 px-3 py-1 rounded-full">
-                      Assigned ✓
-                    </span>
-                  )}
+                  <span className="text-success-text font-bold text-sm bg-success-bg/30 px-3 py-1 rounded-full">
+                    Joined ✓
+                  </span>
                 </div>
               ))
             )}
           </div>
 
           {/* EXECUTION PANEL */}
-          {job.selectedUser && (
+          {(job.assignedUsers?.length ?? 0) > 0 && (
             <div className="bg-bg-card border border-white/10 rounded-2xl p-6 shadow-lg md:col-span-2">
               <h2 className="font-bold text-xl mb-6 text-text-primary">Job Execution</h2>
 

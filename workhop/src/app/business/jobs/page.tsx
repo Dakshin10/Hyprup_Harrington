@@ -69,13 +69,15 @@ const JobCard = memo(function JobCard({ job, onRepost }: { job: Job; onRepost: (
       <div className="mt-3 text-sm text-text-secondary space-y-1">
         <p>💰 ₹{job.payment}</p>
         <p>⏱ {job.duration} hrs</p>
-        <p>👥 {job.applicants?.length || 0} applicants</p>
+        <p>👥 {job.assignedUsers?.length || 0} / {job.peopleRequired || 1} joined</p>
       </div>
 
-      {job.selectedUser && (
-        <div className="mt-4 border-t border-white/10 pt-3">
-          <p className="text-xs text-text-muted mb-1">Assigned</p>
-          <WorkerCell uid={job.selectedUser} />
+      {(job.assignedUsers?.length ?? 0) > 0 && (
+        <div className="mt-4 border-t border-white/10 pt-3 flex flex-col gap-2">
+          <p className="text-xs text-text-muted mb-1">Joined</p>
+          {job.assignedUsers?.map((uid: string) => (
+             <WorkerCell key={uid} uid={uid} />
+          ))}
         </div>
       )}
 

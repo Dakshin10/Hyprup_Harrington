@@ -64,7 +64,8 @@ export async function createJob(payload: any): Promise<Job> {
       businessName,
       jobId: `job-${Date.now()}`,
       applicants: [],
-      selectedUser: null,
+      assignedUsers: [],
+      peopleRequired: payload.peopleRequired || 1,
       status: "open",
       createdAt: Date.now(),
     }),
@@ -113,19 +114,17 @@ export async function applyToJob(jobId: string, userId: string): Promise<Job> {
   return res.json();
 }
 
-// ─── Cancel job (Business Action) ──────────────────────────────────────────────
-export async function cancelJob(jobId: string): Promise<Job> {
+// ─── Delete or Cancel job (Business Action) ───────────────────────────────────
+export async function deleteJob(jobId: string, userId: string): Promise<{ message: string; action: string; notifyUser?: string }> {
   const res = await fetch(`/api/jobs/${jobId}`, {
-    method: "PATCH",
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "cancel"
-    }),
+    body: JSON.stringify({ userId }),
   });
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || "Failed to cancel job");
+    throw new Error(error.error || "Failed to delete job");
   }
   return res.json();
 }
@@ -149,7 +148,7 @@ export async function selectWorker(jobId: string, workerUid: string): Promise<Jo
 // ─── Promote backup ───────────────────────────────────────────────────────────
 export async function promoteBackup(jobId: string): Promise<Job> {
   const job = await getJob(jobId);
-  const nextApplicant = job.applicants.find(a => a !== job.selectedUser);
+  const nextApplicant = job.applicants.find(a => !job.assignedUsers?.includes(a));
   if (!nextApplicant) throw new Error("No backup available");
 
   return selectWorker(jobId, nextApplicant);
@@ -238,7 +237,7 @@ export async function repostJob(jobId: string): Promise<Job> {
     id: undefined,
     jobId: undefined,
     applicants: [],
-    selectedUser: null,
+    assignedUsers: [],
     status: "open",
     confirmed: false,
     checkIn: false,
