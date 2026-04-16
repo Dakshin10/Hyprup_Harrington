@@ -1,6 +1,6 @@
 "use client";
 
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar } from "@/components/Navbar";
 import Hero from "@/components/landing/Hero";
 import { ProblemSolution } from "@/components/landing/ProblemSolution";
 import { HowItWorks } from "@/components/landing/HowItWorks";
@@ -9,7 +9,7 @@ import Features from "@/components/landing/Features";
 import DemoFlow from "@/components/landing/DemoFlow";
 import CTA from "@/components/landing/CTA";
 import { Footer } from "@/components/landing/Footer";
-import PageTransition from "@/components/layout/PageTransition";
+import PageTransition from "@/components/PageTransition";
 
 export default function RootPage() {
   return (

@@ -54,9 +54,16 @@ export default function StudentJobsClient({ initialJobs }: { initialJobs: Job[] 
 
   // ─── Initial Load ────────────────────────────────────────────────────────
   useEffect(() => {
-    // Load baseline jobs immediately from mockDb
-    const baseline = getJobs({ status: "open" });
-    setJobs(baseline);
+    // Load baseline jobs immediately
+    const loadJobs = async () => {
+      try {
+        const baseline = await getJobs({ status: "open" });
+        setJobs(baseline || []);
+      } catch (err) {
+        console.error("Failed to load baseline jobs:", err);
+      }
+    };
+    loadJobs();
   }, []);
 
   // ─── Fetch Nearby Jobs (Refinement) ───────────────────────────────────────
@@ -82,7 +89,7 @@ export default function StudentJobsClient({ initialJobs }: { initialJobs: Job[] 
     if (!user) return;
     setApplyingTo(jobId);
     try {
-      await applyToJob(jobId);
+      await applyToJob(jobId, user.uid);
       setJobs(jobs.map((j) =>
         j.jobId === jobId ? { ...j, applicants: [...(j.applicants || []), user.uid] } : j
       ));
@@ -96,6 +103,7 @@ export default function StudentJobsClient({ initialJobs }: { initialJobs: Job[] 
   }, [user, jobs, toast]);
 
   const processedJobs = useMemo(() => {
+    if (!Array.isArray(jobs)) return [];
     let result = [...jobs];
 
     if (userLocation) {

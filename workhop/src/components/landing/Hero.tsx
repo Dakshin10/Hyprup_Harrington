@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronRight } from "lucide-center";
+import { ChevronRight as ChevronIcon } from "lucide-react";
 
 const floatingCards = [
   { title: "Store Helper", pay: "₹450", time: "2 hrs", tag: "Urgent 🔥", color: "from-orange-500/20 to-orange-600/5" },
@@ -25,19 +26,8 @@ const cardVariants = {
 export default function Hero() {
   const router = useRouter();
 
-  const handleRoleSelect = (selectedRole: "student" | "business") => {
-    // Demo login logic for high conversion
-    const demoUser = {
-      uid: `demo-${selectedRole}`,
-      email: `${selectedRole}@demo.com`,
-      role: selectedRole
-    };
-    
-    // Use localStorage to simulate persistene for the MVP
-    localStorage.setItem("workhop_user_role", selectedRole);
-    localStorage.setItem("workhop_user", JSON.stringify(demoUser));
-    
-    router.push(`/${selectedRole}/dashboard`);
+  const handleStart = () => {
+    router.push("/login");
   };
 
   return (
@@ -95,18 +85,19 @@ export default function Hero() {
             <motion.button 
               whileHover={{ scale: 1.04 }} 
               whileTap={{ scale: 0.97 }}
-              onClick={() => handleRoleSelect("business")}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-lg"
+              onClick={handleStart}
+              className="inline-flex items-center gap-2 px-10 py-5 bg-primary-500 text-white font-extrabold rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-600 transition-all text-xl group"
             >
-              I'm a Business →
+              Get Started
+              <ChevronIcon size={20} className="group-hover:translate-x-1 transition-transform" />
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.04 }} 
               whileTap={{ scale: 0.97 }}
-              onClick={() => handleRoleSelect("student")}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-white font-extrabold rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-600 transition-all text-lg"
+              onClick={handleStart}
+              className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-extrabold rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-xl"
             >
-              I'm a Student →
+              Sign In
             </motion.button>
           </div>
 
@@ -158,7 +149,7 @@ export default function Hero() {
                 <span className="text-text-muted">•</span>
                 <span className="text-text-muted">{card.time}</span>
               </div>
-              <button className="mt-3 w-full py-1.5 bg-primary-500/90 text-white text-xs font-bold rounded-lg">
+              <button className="mt-3 w-full py-1.5 bg-primary-500/90 text-white text-xs font-bold rounded-lg pointer-events-none">
                 Apply Now
               </button>
             </motion.div>

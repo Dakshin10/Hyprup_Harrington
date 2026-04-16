@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BusinessDashboard() {
+  console.log("Business Dashboard Rendering");
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 

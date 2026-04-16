@@ -12,6 +12,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { LoadingSkeleton } from "@/components/dashboard/LoadingSkeleton";
 
 const StudentDashboard = () => {
+  console.log("Student Dashboard Rendering");
   const { user, role, loading: authLoading } = useAuth();
   const { toasts, toast, dismiss } = useToast();
 
@@ -309,15 +310,20 @@ const StudentDashboard = () => {
           ) : openJobs.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-4">
               {openJobs.slice(0, 3).map((job) => (
-                <div key={job.jobId} className="p-4 bg-bg-card border border-white/10 rounded-xl">
-                  <p className="font-bold text-text-primary">{job.title}</p>
-                  <p className="text-sm text-text-muted mt-1">₹{job.payment} • {job.duration}h</p>
-                  {job.isUrgent && (
-                    <span className="text-xs bg-error-bg/30 text-error-text px-2 py-0.5 rounded-full font-bold mt-2 inline-block">
-                      🔥 Urgent
-                    </span>
-                  )}
-                </div>
+                <Link key={job.jobId} href={`/student/job/${job.jobId}`}>
+                  <div className="p-4 bg-bg-card border border-white/10 rounded-xl hover:border-primary-500/40 transition-colors cursor-pointer h-full">
+                    <p className="font-bold text-text-primary">{job.title}</p>
+                    <p className="text-sm text-text-muted mt-1">₹{job.payment} • {job.duration}h</p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-[10px] text-text-muted font-mono">{job.businessName || 'Partner'}</span>
+                      {job.isUrgent && (
+                        <span className="text-[9px] bg-error-bg/30 text-error-text px-2 py-0.5 rounded-full font-bold uppercase">
+                          Urgent
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           ) : (

@@ -27,6 +27,8 @@ interface JobForm {
   isUrgent: boolean;
   jobType: "instant" | "scheduled";
   slots: number;
+  date: string; // 🔥 Added
+  time: string; // 🔥 Added
 }
 
 /* ───────────── CONSTANTS ───────────── */
@@ -34,6 +36,7 @@ const HOURLY_RATE = 150;
 
 /* ───────────── COMPONENT ───────────── */
 export default function PostJobPage() {
+  console.log("Post Job Page Rendering");
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuth();
 
@@ -47,6 +50,8 @@ export default function PostJobPage() {
     isUrgent: false,
     jobType: "instant",
     slots: 1,
+    date: new Date().toISOString().split("T")[0],
+    time: "12:00",
   });
 
   const [templates, setTemplates] = useState<any[]>([]);
@@ -167,7 +172,11 @@ export default function PostJobPage() {
       setLoading(true);
       setError("");
 
-      await createJob({ ...form, saveTemplate });
+      await createJob({ 
+        ...form, 
+        createdBy: user.uid,
+        saveTemplate 
+      });
 
       setSuccess("🚀 Job posted!");
       setTimeout(() => router.push("/business/dashboard"), 1200);
@@ -284,12 +293,33 @@ export default function PostJobPage() {
                   <select
                     value={form.duration}
                     onChange={(e) => update("duration", Number(e.target.value))}
-                    className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
+                    className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 outline-none transition"
                   >
                     <option value={1}>1 hr</option>
                     <option value={2}>2 hr</option>
                     <option value={3}>3 hr</option>
                   </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-text-muted uppercase font-bold px-1">Job Date</label>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={(e) => update("date", e.target.value)}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 outline-none transition"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-text-muted uppercase font-bold px-1">Start Time</label>
+                    <input
+                      type="time"
+                      value={form.time}
+                      onChange={(e) => update("time", e.target.value)}
+                      className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary focus:border-primary-500 outline-none transition"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-4">

@@ -1,36 +1,54 @@
 import { useState, useEffect } from "react";
-import { mockDb } from "../lib/mockDb";
+import { onIdTokenChanged, User } from "firebase/auth";
+import { auth } from "../lib/firebase";
+import { getUserProfile, setAuthCookie, UserRole } from "../lib/auth-utils";
 
 export const useAuth = () => {
-  const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<"student" | "business" | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize DB on first load
-    mockDb.init();
+    // Listen for auth state changes
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      try {
+        if (firebaseUser) {
+          // Sync token to cookie for Middleware
+          const token = await firebaseUser.getIdToken();
+          setAuthCookie(token);
+          
+          // Get role from MongoDB API
+          const profile = await getUserProfile(firebaseUser.uid);
+          setUser(firebaseUser);
+          setRole(profile?.role || null);
+        } else {
+          // Clear everything
+          setAuthCookie(null);
+          setUser(null);
+          setRole(null);
+        }
+      } catch (error) {
+        console.error("Auth state change error:", error);
+      } finally {
+        setLoading(false);
+      }
+    });
 
-    const currentUser = mockDb.getUser();
-    if (currentUser) {
-      setUser(currentUser);
-      setRole(currentUser.role);
-    } else {
-      setUser(null);
-      setRole(null);
-    }
-    setLoading(false);
+    return () => unsubscribe();
   }, []);
 
-  const login = (userData: any) => {
-    mockDb.setUser(userData);
-    setUser(userData);
-    setRole(userData.role);
+  const login = async () => {
+    // Redirect logic handled in Login page
   };
 
-  const logout = () => {
-    localStorage.clear();
-    setUser(null);
-    setRole(null);
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      setAuthCookie(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return { user, role, loading, login, logout };

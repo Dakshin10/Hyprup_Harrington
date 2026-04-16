@@ -14,7 +14,10 @@ export interface Job {
   createdBy: string;
   applicants: string[];
   selectedUser: string | null;
-  status: "open" | "closed" | "in-progress" | "assigned" | "completed";
+  status: "open" | "closed" | "in-progress" | "assigned" | "completed" | "cancelled";
+  date?: string;
+  time?: string;
+  businessName?: string;
   // Worker confirmation system
   confirmed?: boolean;          // student clicked "I'll Be There"
   confirmationDeadline?: number;// unix ms — business can set a cutoff

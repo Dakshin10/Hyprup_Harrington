@@ -11,7 +11,6 @@ export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const { user, role } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,32 +56,21 @@ export const Navbar = () => {
           ))}
         </div>
 
-        {/* Desktop Auth */}
+        {/* Desktop Auth Entry */}
         <div className="hidden md:flex items-center gap-4">
-          {user ? (
-            <Link 
-              href={role === "business" ? "/business/dashboard" : "/student/dashboard"}
-              className="text-sm font-bold text-white bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-2.5 rounded-xl transition-all"
-            >
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link 
-                href="/login"
-                className="text-sm font-bold text-text-secondary hover:text-white transition-colors px-4"
-              >
-                Login
-              </Link>
-              <Link 
-                href="#hero"
-                className="text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-primary-500/20 flex items-center gap-2 group"
-              >
-                Get Started
-                <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </>
-          )}
+          <Link 
+            href="/login"
+            className="text-sm font-bold text-text-secondary hover:text-white transition-colors px-4"
+          >
+            Login
+          </Link>
+          <Link 
+            href="/login"
+            className="text-sm font-bold text-white bg-primary-500 hover:bg-primary-600 px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-primary-500/20 flex items-center gap-2 group"
+          >
+            Get Started
+            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </div>
 
         {/* Mobile Toggle */}
@@ -115,32 +103,20 @@ export const Navbar = () => {
                 </a>
               ))}
               <hr className="border-white/5" />
-              {user ? (
-                <Link 
-                  href={role === "business" ? "/business/dashboard" : "/student/dashboard"}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-lg font-medium text-white"
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link 
-                    href="/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-lg font-medium text-text-secondary"
-                  >
-                    Login
-                  </Link>
-                  <Link 
-                    href="#hero" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="bg-primary-500 text-white font-bold py-4 rounded-2xl text-center"
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
+              <Link 
+                href="/login" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-lg font-medium text-text-secondary"
+              >
+                Login
+              </Link>
+              <Link 
+                href="/login" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="bg-primary-500 text-white font-bold py-4 rounded-2xl text-center"
+              >
+                Get Started
+              </Link>
             </div>
           </motion.div>
         )}

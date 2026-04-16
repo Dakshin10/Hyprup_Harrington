@@ -215,7 +215,7 @@ export default function JobDetailPage() {
                   className="flex justify-between items-center border border-white/10 bg-bg-main p-4 rounded-xl mb-3 hover:border-primary-500/40 transition-colors"
                 >
                   <span className="text-sm font-semibold text-text-primary truncate mr-4 font-mono">
-                    {uid.slice(0, 16)}…
+                    {uid?.slice(0, 16) || "Anonymous"}…
                   </span>
 
                   {!job.selectedUser && (
