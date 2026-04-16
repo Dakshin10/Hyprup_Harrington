@@ -10,6 +10,7 @@ import Link from "next/link";
 import { PageWrapper, StaggerContainer, MotionCard, MotionButton } from "@/components/MotionWrappers";
 import { ToastContainer } from "@/components/ui/Toast";
 import { LoadingSkeleton } from "@/components/dashboard/LoadingSkeleton";
+import { WorkHopAISection } from "@/components/dashboard/WorkHopAISection";
 
 const StudentDashboard = () => {
   console.log("Student Dashboard Rendering");
@@ -216,6 +217,9 @@ const StudentDashboard = () => {
             </StaggerContainer>
           )}
         </section>
+
+        {/* WORKHOP AI DIRECT INTEGRATION */}
+        <WorkHopAISection />
 
         {/* ACTIVE TASK FLOW (polling-based) */}
         {activeJobs.length > 0 && (
