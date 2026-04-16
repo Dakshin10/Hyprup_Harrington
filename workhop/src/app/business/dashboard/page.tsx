@@ -82,7 +82,20 @@ export default function BusinessDashboard() {
   }, [jobs, activeTab]);
 
   if (authLoading) return <div className="p-6"><LoadingSkeleton /></div>;
-  if (!user || role !== "business") return null;
+  
+  if (!user) return null; // Let DashboardLayout handle redirect to /
+
+  if (role !== "business") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+        <h2 className="text-2xl font-bold text-white">Access Restricted</h2>
+        <p className="text-text-secondary">This dashboard is for businesses only.</p>
+        <Link href="/" className="px-6 py-2 bg-primary-500 rounded-lg text-white font-bold">
+          Go Home
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>

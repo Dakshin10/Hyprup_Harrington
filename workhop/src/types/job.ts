@@ -5,7 +5,12 @@ export interface Job {
   description?: string;
   payment: number;
   duration: number;
-  location: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
+  address?: string; // Human-readable address
+
   createdBy: string;
   applicants: string[];
   selectedUser: string | null;

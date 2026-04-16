@@ -1,31 +1,51 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { Navbar } from "@/components/layout/Navbar";
+import Hero from "@/components/landing/Hero";
+import { ProblemSolution } from "@/components/landing/ProblemSolution";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { UseCases } from "@/components/landing/UseCases";
+import Features from "@/components/landing/Features";
+import DemoFlow from "@/components/landing/DemoFlow";
+import CTA from "@/components/landing/CTA";
+import { Footer } from "@/components/landing/Footer";
+import PageTransition from "@/components/layout/PageTransition";
 
 export default function RootPage() {
-  const { user, role, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push("/login");
-      } else if (role === "business") {
-        router.push("/business/dashboard");
-      } else if (role === "student") {
-        router.push("/student/dashboard");
-      }
-    }
-  }, [user, role, loading, router]);
-
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-400 font-medium animate-pulse text-sm tracking-widest uppercase">Initializing WorkHop...</p>
-      </div>
-    </div>
+    <PageTransition>
+      <main className="min-h-screen bg-black text-white selection:bg-primary-500/30">
+        <Navbar />
+        
+        {/* Sections */}
+        <Hero />
+        
+        <div id="problem-solution">
+          <ProblemSolution />
+        </div>
+
+        <div id="how-it-works">
+          <HowItWorks />
+        </div>
+
+        <div id="use-cases">
+          <UseCases />
+        </div>
+
+        <div id="features">
+          <Features />
+        </div>
+
+        <div id="demo-flow">
+          <DemoFlow />
+        </div>
+
+        <div id="cta">
+          <CTA />
+        </div>
+
+        <Footer />
+      </main>
+    </PageTransition>
   );
 }

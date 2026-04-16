@@ -3,11 +3,12 @@
 import { motion } from "framer-motion";
 
 const steps = [
-  { label: "Business", action: "Posts job", detail: "Patel Store needs 2 helpers for Diwali rush • ₹450 • 3 hrs", side: "biz", color: "bg-primary-500" },
-  { label: "Students", action: "Apply instantly", detail: "3 nearby students apply within 5 minutes", side: "student", color: "bg-teal-500" },
-  { label: "Business", action: "Selects best fit", detail: "Raj (98% reliability, 4.9⭐) is selected — gets notified", side: "biz", color: "bg-primary-500" },
-  { label: "Raj", action: "Checks in via QR", detail: "Scans QR code at store — work begins at 11 AM", side: "student", color: "bg-teal-500" },
-  { label: "Job done", action: "Payment released", detail: "Raj earns ₹450 in 3 hours. Business saves ₹2000 vs agency.", side: "biz", color: "bg-success-text" },
+  { label: "Student", action: "Opens app", detail: "Instantly sees real-time micro-jobs within a 2-5km radius.", side: "student", color: "bg-primary-500" },
+  { label: "Discovery", action: "Sees nearby jobs", detail: "Browses local tasks: Store Helper, Event Staff, or Delivery Assist.", side: "student", color: "bg-teal-500" },
+  { label: "Action", action: "Applies instantly", detail: "One tap application. No resume required. Speed is everything.", side: "student", color: "bg-primary-500" },
+  { label: "Arrival", action: "Reaches location", detail: "Navigation guides the student to the business storefront.", side: "student", color: "bg-teal-500" },
+  { label: "Completion", action: "Completes work", detail: "Work is done in 1-3 hours. Verification happens on the spot.", side: "student", color: "bg-primary-500" },
+  { label: "Success", action: "Earns instantly", detail: "Payment is tracked and reputation score increases.", side: "student", color: "bg-success-text" },
 ];
 
 export default function DemoFlow() {

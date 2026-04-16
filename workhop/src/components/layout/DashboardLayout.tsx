@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { Menu, X } from "lucide-react";
@@ -13,16 +11,28 @@ import NavigationProgress from "@/components/layout/NavigationProgress";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    // PROTECT DASHBOARD: If not loading and no user, kick to homepage
+    if (!loading && !user) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
+
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
+    logout();
+    router.replace("/");
+    router.refresh(); // Clear Next.js cache
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center" />;
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center animate-pulse">
+        <div className="w-12 h-12 bg-primary-500 rounded-xl" />
+      </div>
+    );
   }
 
   return (

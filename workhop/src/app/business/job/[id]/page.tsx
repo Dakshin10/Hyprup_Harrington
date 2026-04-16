@@ -9,6 +9,7 @@ import { QRCode } from "@/components/ui/QRCode";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect } from "react";
+import type { Job } from "@/types/job";
 import {
   getJob,
   selectWorker as selectWorkerApi,
@@ -16,22 +17,6 @@ import {
   markComplete,
   markPaid,
 } from "@/services/jobService";
-
-type Job = {
-  jobId: string;
-  title: string;
-  description?: string;
-  payment: number;
-  duration: number;
-  location: string;
-  status: string;
-  applicants?: string[];
-  selectedUser?: string | null;
-  confirmed?: boolean;
-  checkIn?: boolean;
-  completed?: boolean;
-  paymentStatus?: string;
-};
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
@@ -199,7 +184,7 @@ export default function JobDetailPage() {
             <div className="mt-6 space-y-2 text-sm text-text-secondary">
               <p>💰 ₹{job.payment}</p>
               <p>⏱ {job.duration} hrs</p>
-              <p>📍 {job.location}</p>
+              <p>📍 {job.address || "Location not specified"}</p>
             </div>
 
             <button

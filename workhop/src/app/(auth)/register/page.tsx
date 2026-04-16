@@ -2,13 +2,13 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { registerWithEmail, loginWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { mockDb } from "@/lib/mockDb";
 
 const RegisterPage = () => {
   const router = useRouter();
-  const { user, role: sessionRole, loading: authLoading } = useAuth();
+  const { user, role: sessionRole, loading: authLoading, login } = useAuth();
   const [role, setRole] = useState<"student" | "business">("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,33 +28,52 @@ const RegisterPage = () => {
     setLoading(true);
     setError(null);
 
-    const { user: registeredUser, role: finalRole, error: regError } = await registerWithEmail(email, password, role);
+    // Mock register logic
+    setTimeout(() => {
+      const uid = email.split('@')[0] || "demo-user";
+      const userData = {
+        uid,
+        email,
+        role,
+      };
+      
+      mockDb.updateProfile(uid, {
+        uid,
+        email,
+        role,
+        name,
+        createdAt: Date.now()
+      });
 
-    if (regError) {
-      setError(regError.replace("Firebase: ", ""));
+      login(userData);
       setLoading(false);
-      return;
-    }
-
-    if (registeredUser && finalRole) {
-      router.push(finalRole === "student" ? "/student/dashboard" : "/business/dashboard");
-    }
+      router.push(role === "student" ? "/student/dashboard" : "/business/dashboard");
+    }, 1000);
   };
 
   const handleGoogleRegister = async () => {
     setLoading(true);
     setError(null);
-    const { user: loggedInUser, role: finalRole, error: loginError } = await loginWithGoogle(role);
     
-    if (loginError) {
-      setError(loginError.replace("Firebase: ", ""));
-      setLoading(false);
-      return;
-    }
+    setTimeout(() => {
+      const userData = {
+        uid: "google-user",
+        email: "google@demo.com",
+        role,
+      };
+      
+      mockDb.updateProfile("google-user", {
+        uid: "google-user",
+        email: "google@demo.com",
+        role,
+        name: "Google User",
+        createdAt: Date.now()
+      });
 
-    if (loggedInUser && finalRole) {
-      router.push(finalRole === "student" ? "/student/dashboard" : "/business/dashboard");
-    }
+      login(userData);
+      setLoading(false);
+      router.push(role === "student" ? "/student/dashboard" : "/business/dashboard");
+    }, 1000);
   };
 
   if (authLoading) {

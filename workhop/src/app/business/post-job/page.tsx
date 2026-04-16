@@ -6,6 +6,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { createJob } from "@/services/jobService";
 import { getTemplates } from "@/services/templateService";
+import dynamic from "next/dynamic";
+
+const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full bg-bg-main animate-pulse rounded-2xl border border-white/10" />,
+});
 
 /* ───────────── TYPES ───────────── */
 interface JobForm {
@@ -13,7 +19,11 @@ interface JobForm {
   description: string;
   payment: number;
   duration: number;
-  location: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  address: string;
   isUrgent: boolean;
   jobType: "instant" | "scheduled";
   slots: number;
@@ -32,7 +42,8 @@ export default function PostJobPage() {
     description: "",
     payment: HOURLY_RATE,
     duration: 1,
-    location: "",
+    location: { type: "Point", coordinates: [0, 0] },
+    address: "",
     isUrgent: false,
     jobType: "instant",
     slots: 1,
@@ -44,6 +55,25 @@ export default function PostJobPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  /* ───────────── SEARCH STATE ───────────── */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+
+  /* ───────────── COIMBATORE BOUNDS ───────────── */
+  const COIMBATORE = {
+    minLat: 10.9,
+    maxLat: 11.2,
+    minLng: 76.8,
+    maxLng: 77.2
+  };
+
+  const isInsideCoimbatore = (lat: number, lng: number) => {
+    return lat >= COIMBATORE.minLat && lat <= COIMBATORE.maxLat &&
+           lng >= COIMBATORE.minLng && lng <= COIMBATORE.maxLng;
+  };
+
   /* ───────────── AUTO PAYMENT ───────────── */
   useEffect(() => {
     setForm((prev) => ({
@@ -51,6 +81,67 @@ export default function PostJobPage() {
       payment: Math.round(prev.duration * HOURLY_RATE),
     }));
   }, [form.duration]);
+
+  /* ───────────── DEBOUNCED SEARCH ───────────── */
+  useEffect(() => {
+    if (searchQuery.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        // Force search in Coimbatore
+        const query = `${searchQuery} Coimbatore`;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`);
+        const data = await res.json();
+        setSearchResults(data);
+      } catch (err) {
+        console.error("Search failed", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  /* ───────────── GEOLOCATION ───────────── */
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) return setError("Geolocation not supported");
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        
+        if (!isInsideCoimbatore(lat, lng)) {
+          setIsLocating(false);
+          return setError("Alert: WorkHop currently only supports jobs within Coimbatore city limits.");
+        }
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+          const data = await res.json();
+          setForm(prev => ({
+            ...prev,
+            location: { type: "Point", coordinates: [lng, lat] },
+            address: data.display_name
+          }));
+          setSearchQuery("");
+        } catch (err) {
+          setError("Failed to fetch address for your location");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        setIsLocating(false);
+        setError("Location access denied. Please search manually.");
+      }
+    );
+  };
 
   /* ───────────── FETCH TEMPLATES ───────────── */
   useEffect(() => {
@@ -68,8 +159,8 @@ export default function PostJobPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!form.title || !form.location) {
-      return setError("Title and location required");
+    if (!form.title || !form.address) {
+      return setError("Title and map location required");
     }
 
     try {
@@ -201,12 +292,89 @@ export default function PostJobPage() {
                   </select>
                 </div>
 
-                <input
-                  placeholder="Location"
-                  value={form.location}
-                  onChange={(e) => update("location", e.target.value)}
-                  className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
-                />
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex-1 relative">
+                      <input
+                        placeholder="Search location (e.g. MG Road, Bangalore)"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full p-3 rounded-xl border border-white/10 bg-bg-main text-text-primary placeholder-text-muted focus:border-primary-500 focus:ring focus:ring-primary-500/30 outline-none transition"
+                      />
+                      {isSearching && (
+                        <div className="absolute right-3 top-3.5 animate-spin h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                      )}
+                      
+                      {/* SEARCH RESULTS DROPDOWN */}
+                      <AnimatePresence>
+                        {searchResults.length > 0 && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute z-50 left-0 right-0 mt-2 bg-bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+                          >
+                            {searchResults.map((res) => (
+                              <button
+                                key={res.place_id}
+                                type="button"
+                                onClick={() => {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    location: { type: "Point", coordinates: [parseFloat(res.lon), parseFloat(res.lat)] },
+                                    address: res.display_name
+                                  }));
+                                  setSearchResults([]);
+                                  setSearchQuery("");
+                                }}
+                                className="w-full text-left p-3 text-sm text-text-muted hover:text-text-primary hover:bg-white/5 transition border-b border-white/5 last:border-0"
+                              >
+                                {res.display_name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleUseMyLocation}
+                      disabled={isLocating}
+                      className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-text-primary hover:bg-white/10 transition shrink-0 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isLocating ? "Detecting..." : "📍 Use My Location"}
+                    </button>
+                  </div>
+
+                  {form.address && (
+                    <div className="p-3 bg-primary-500/10 border border-primary-500/30 rounded-xl">
+                      <p className="text-xs text-primary-400 font-medium mb-2 flex items-center gap-1">
+                         Selected Location
+                      </p>
+                      <p className="text-sm text-text-primary leading-tight">
+                        {form.address}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="relative group">
+                    <MapComponent 
+                      initialLocation={form.location.coordinates[0] !== 0 ? [form.location.coordinates[1], form.location.coordinates[0]] : undefined}
+                      onSelectLocation={(lat, lng, addr) => {
+                        setForm(prev => ({
+                          ...prev,
+                          location: { type: "Point", coordinates: [lng, lat] },
+                          address: addr || prev.address
+                        }));
+                        setSearchQuery(""); // Clear search on manual select
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 z-[400] bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white/70 uppercase tracking-widest font-bold">
+                      Interactive Map
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* OPTIONS */}

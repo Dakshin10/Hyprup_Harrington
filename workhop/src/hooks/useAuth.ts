@@ -1,39 +1,37 @@
 import { useState, useEffect } from "react";
-import { User, onAuthStateChanged } from "firebase/auth";
-import { auth } from "../lib/firebase";
-import { getUserProfile } from "@/services/userService";
+import { mockDb } from "../lib/mockDb";
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<"student" | "business" | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    // Initialize DB on first load
+    mockDb.init();
+
+    const currentUser = mockDb.getUser();
+    if (currentUser) {
       setUser(currentUser);
-
-      if (currentUser) {
-        try {
-          const profile = await getUserProfile(currentUser.uid);
-          const r = profile?.role;
-          if (r === "student" || r === "business") {
-            setRole(r);
-          } else {
-            setRole(null);
-          }
-        } catch (error) {
-          console.error("[useAuth] Error fetching user role from API:", error);
-          setRole(null);
-        }
-      } else {
-        setRole(null);
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+      setRole(currentUser.role);
+    } else {
+      setUser(null);
+      setRole(null);
+    }
+    setLoading(false);
   }, []);
 
-  return { user, role, loading };
+  const login = (userData: any) => {
+    mockDb.setUser(userData);
+    setUser(userData);
+    setRole(userData.role);
+  };
+
+  const logout = () => {
+    localStorage.clear();
+    setUser(null);
+    setRole(null);
+  };
+
+  return { user, role, loading, login, logout };
 };

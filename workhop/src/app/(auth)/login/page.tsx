@@ -2,13 +2,13 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginWithEmail, loginWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { mockDb } from "@/lib/mockDb";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { user, role: sessionRole, loading: authLoading } = useAuth();
+  const { user, role: sessionRole, loading: authLoading, login } = useAuth();
   const [role, setRole] = useState<"student" | "business">("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,34 +27,55 @@ const LoginPage = () => {
     setLoading(true);
     setError(null);
 
-    const { user: loggedInUser, role: finalRole, error: loginError } = await loginWithEmail(email, password, role);
+    // Mock login logic
+    setTimeout(() => {
+      const uid = email.split('@')[0] || "demo-user";
+      const userData = {
+        uid,
+        email,
+        role,
+      };
+      
+      // Save profile if not exists
+      if (!mockDb.getProfile(uid)) {
+        mockDb.updateProfile(uid, {
+          uid,
+          email,
+          role,
+          name: email.split('@')[0].toUpperCase(),
+          createdAt: Date.now()
+        });
+      }
 
-    if (loginError) {
-      // Firebase throws errors with certain formats, let's clean it up slightly if needed
-      setError(loginError.replace("Firebase: ", ""));
+      login(userData);
       setLoading(false);
-      return;
-    }
-
-    if (loggedInUser && finalRole) {
-      router.push(finalRole === "student" ? "/student/dashboard" : "/business/dashboard");
-    }
+      router.push(role === "student" ? "/student/dashboard" : "/business/dashboard");
+    }, 1000);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
-    const { user: loggedInUser, role: finalRole, error: loginError } = await loginWithGoogle(role);
     
-    if (loginError) {
-      setError(loginError.replace("Firebase: ", ""));
-      setLoading(false);
-      return;
-    }
+    setTimeout(() => {
+      const userData = {
+        uid: "google-user",
+        email: "google@demo.com",
+        role,
+      };
+      
+      mockDb.updateProfile("google-user", {
+        uid: "google-user",
+        email: "google@demo.com",
+        role,
+        name: "Google User",
+        createdAt: Date.now()
+      });
 
-    if (loggedInUser && finalRole) {
-      router.push(finalRole === "student" ? "/student/dashboard" : "/business/dashboard");
-    }
+      login(userData);
+      setLoading(false);
+      router.push(role === "student" ? "/student/dashboard" : "/business/dashboard");
+    }, 1000);
   };
 
   if (authLoading) {

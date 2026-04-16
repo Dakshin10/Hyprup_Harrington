@@ -1,43 +1,43 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, Zap, Calendar, Star, CreditCard, ToggleRight } from "lucide-react";
+import { MapPin, Zap, Circle, ShieldCheck, CreditCard, FastForward } from "lucide-react";
 
 const features = [
   {
     icon: <MapPin size={22} />,
-    title: "Hyperlocal Matching",
-    desc: "Jobs and students are matched within 2–5km radius for maximum convenience and reliability.",
+    title: "Location-based Matching",
+    desc: "Jobs and students are matched using high-precision geospatial coordinates for perfect convenience.",
     color: "text-primary-500 bg-primary-500/10",
   },
   {
     icon: <Zap size={22} />,
-    title: "Instant Apply",
-    desc: "Students apply with one tap. No forms, no cover letters. Faster than ordering food.",
+    title: "One-Tap Application",
+    desc: "Apply with a single tap. No resumes or long forms needed—speed is our first priority.",
     color: "text-yellow-400 bg-yellow-400/10",
   },
   {
-    icon: <Calendar size={22} />,
-    title: "Scheduled Jobs",
-    desc: "Plan ahead or post last-minute. WorkHop handles both instant and future hiring seamlessly.",
-    color: "text-teal-400 bg-teal-400/10",
-  },
-  {
-    icon: <Star size={22} />,
-    title: "Ratings & Trust",
-    desc: "Both parties rate each other after every job. Reliability scores ensure only the best show up.",
-    color: "text-amber-400 bg-amber-400/10",
-  },
-  {
-    icon: <CreditCard size={22} />,
-    title: "Quick Payments",
-    desc: "Track payment status in real-time. Businesses mark paid, students see it instantly.",
+    icon: <Circle size={22} className="fill-green-400" />,
+    title: '"Available Now" System',
+    desc: "Real-time status tracking shows exactly who is ready to work right now in your immediate area.",
     color: "text-green-400 bg-green-400/10",
   },
   {
-    icon: <ToggleRight size={22} />,
-    title: "Availability Toggle",
-    desc: "Students can flip their availability on/off to get matched faster when they want extra income.",
+    icon: <ShieldCheck size={22} />,
+    title: "Reliable Worker Tracking",
+    desc: "Secure check-ins and performance ratings ensure high-quality help every single time.",
+    color: "text-blue-400 bg-blue-400/10",
+  },
+  {
+    icon: <CreditCard size={22} />,
+    title: "Instant Earnings Tracking",
+    desc: "Watch your earnings grow in real-time as you complete micro-jobs across the neighborhood.",
+    color: "text-emerald-400 bg-emerald-400/10",
+  },
+  {
+    icon: <FastForward size={22} />,
+    title: "Instant Hiring",
+    desc: "Businesses find help in minutes, not days. Built for the speed of modern hyperlocal labor.",
     color: "text-purple-400 bg-purple-400/10",
   },
 ];

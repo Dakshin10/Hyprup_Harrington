@@ -1,58 +1,59 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function CTA() {
+  const router = useRouter();
+
+  const handleRoleSelect = (selectedRole: "student" | "business") => {
+    const demoUser = {
+      uid: `demo-${selectedRole}`,
+      email: `${selectedRole}@demo.com`,
+      role: selectedRole
+    };
+    localStorage.setItem("workhop_user_role", selectedRole);
+    localStorage.setItem("workhop_user", JSON.stringify(demoUser));
+    router.push(`/${selectedRole}/dashboard`);
+  };
+
   return (
-    <section className="py-28 px-6">
-      <div className="max-w-4xl mx-auto">
+    <section className="py-24 px-6 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-500/10 blur-[120px] rounded-full -z-10" />
+
+      <div className="max-w-4xl mx-auto bg-gradient-to-br from-bg-card to-bg-main border border-white/10 rounded-[3rem] p-12 md:p-20 text-center relative shadow-2xl">
         <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.97 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.6 }}
-          className="relative overflow-hidden p-12 md:p-16 rounded-[2.5rem] border border-primary-500/20 bg-gradient-to-br from-primary-500/10 via-bg-card to-orange-500/5 text-center shadow-2xl"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
-          {/* Glowing orbs */}
-          <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl" />
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
+            Start Hiring or <br />
+            <span className="text-primary-500">Start Earning</span> Today
+          </h2>
+          <p className="text-text-secondary text-lg mb-12 max-w-xl mx-auto">
+            Join thousands of students and businesses building a faster, more reliable local workforce.
+          </p>
 
-          <div className="relative z-10">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-6xl mb-6"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleRoleSelect("business")}
+              className="w-full sm:w-auto px-10 py-5 bg-white text-black font-black rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-xl"
             >
-              🚀
-            </motion.div>
-
-            <h2 className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-text-primary mb-6 leading-tight">
-              Start earning or hiring
-              <br />
-              <span className="bg-gradient-to-r from-primary-500 to-yellow-400 bg-clip-text text-transparent">
-                in minutes.
-              </span>
-            </h2>
-
-            <p className="text-text-secondary text-xl mb-10 max-w-xl mx-auto">
-              Join 500+ students and 120+ businesses already using WorkHop to get things done — fast.
-            </p>
-
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xl font-extrabold rounded-2xl shadow-2xl shadow-primary-500/40 hover:shadow-primary-500/60 transition-shadow"
-              >
-                Get Started Free →
-              </Link>
-            </motion.div>
-
-            <p className="text-text-muted text-sm mt-6">
-              No credit card required • Free to sign up • Takes 30 seconds
-            </p>
+              Post a Job
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleRoleSelect("student")}
+              className="w-full sm:w-auto px-10 py-5 bg-primary-500 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-600 transition-all text-xl"
+            >
+              Find Work
+            </motion.button>
           </div>
         </motion.div>
       </div>

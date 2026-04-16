@@ -77,12 +77,43 @@ export const Topbar = () => {
           </AnimatePresence>
         </div>
 
+        <div className="flex bg-bg-hover border border-white/10 rounded-xl overflow-hidden shadow-sm">
+          <button
+            onClick={() => {
+              const newUser = { ...user, role: "student" };
+              localStorage.setItem("workhop_user", JSON.stringify(newUser));
+              window.location.reload();
+            }}
+            className={`px-4 py-2 text-xs font-bold transition-all ${
+              role === "student" 
+                ? "bg-primary-500 text-white shadow-inner" 
+                : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            Student
+          </button>
+          <button
+            onClick={() => {
+              const newUser = { ...user, role: "business" };
+              localStorage.setItem("workhop_user", JSON.stringify(newUser));
+              window.location.reload();
+            }}
+            className={`px-4 py-2 text-xs font-bold transition-all ${
+              role === "business" 
+                ? "bg-primary-500 text-white shadow-inner" 
+                : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            Business
+          </button>
+        </div>
+
         <div className="flex items-center gap-3 border border-white/10 bg-white/5 pl-4 pr-1.5 py-1.5 rounded-full shadow-sm">
           <span className="text-sm font-medium text-text-secondary max-w-[150px] truncate">
-            {user?.email}
+            {user?.email || "demo@workhop.com"}
           </span>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-primary-600 flex items-center justify-center text-text-primary font-bold shadow-inner">
-            {user?.email?.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-primary-600 flex items-center justify-center text-text-primary font-bold shadow-inner uppercase">
+            {user?.email?.charAt(0) || "D"}
           </div>
         </div>
       </div>

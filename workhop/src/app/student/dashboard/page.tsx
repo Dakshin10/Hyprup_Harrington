@@ -22,8 +22,20 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [actionProcessing, setActionProcessing] = useState<string | null>(null);
   const [available, setAvailable] = useState(true);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [radius, setRadius] = useState(5000); // 5km default
 
-  // ─── One-time fetch: job history + open jobs ──────────────────────────────
+  // ─── Get User Location ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn("Location access denied", err)
+      );
+    }
+  }, []);
+
+  // ─── One-time fetch: job history + nearby jobs ──────────────────────────────
   useEffect(() => {
     if (authLoading || !user || role !== "student") return;
     let cancelled = false;
@@ -31,9 +43,16 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        const fetchOptions: any = { status: "open", limit: 10 };
+        if (location) {
+          fetchOptions.lat = location.lat;
+          fetchOptions.lng = location.lng;
+          fetchOptions.radius = radius;
+        }
+
         const [myFetched, openFetched] = await Promise.all([
           getJobs({ applicant: user.uid, limit: 20 }),
-          getJobs({ status: "open", limit: 10 }),
+          getJobs(fetchOptions),
         ]);
         if (cancelled) return;
         setMyJobs(myFetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
@@ -48,7 +67,7 @@ const StudentDashboard = () => {
 
     fetchData();
     return () => { cancelled = true; };
-  }, [user, role, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, role, authLoading, location, radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Polling: active jobs (replaces onSnapshot) ───────────────────────────
   useEffect(() => {
@@ -119,7 +138,20 @@ const StudentDashboard = () => {
   }, [myJobs, user]);
 
   if (authLoading) return <div className="p-6"><LoadingSkeleton /></div>;
-  if (!user || role !== "student") return null;
+  
+  if (!user) return null; // Let DashboardLayout handle redirect to /
+
+  if (role !== "student") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+        <h2 className="text-2xl font-bold text-white">Access Restricted</h2>
+        <p className="text-text-secondary">This dashboard is for students only.</p>
+        <Link href="/" className="px-6 py-2 bg-primary-500 rounded-lg text-white font-bold">
+          Go Home
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -245,11 +277,28 @@ const StudentDashboard = () => {
 
         {/* NEARBY JOBS */}
         <section>
-          <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-bold text-text-primary">Nearby Jobs</h2>
-            <Link href="/student/jobs" className="text-primary-500 hover:text-primary-400 text-sm font-semibold">
-              View All →
-            </Link>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Nearby Jobs</h2>
+              <p className="text-xs text-text-muted">Based on your current location</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <select 
+                value={radius} 
+                onChange={(e) => setRadius(Number(e.target.value))}
+                className="bg-bg-card border border-white/10 rounded-lg px-3 py-1 text-xs text-text-primary outline-none focus:border-primary-500"
+              >
+                <option value={1000}>1 km</option>
+                <option value={3000}>3 km</option>
+                <option value={5000}>5 km</option>
+                <option value={10000}>10 km</option>
+              </select>
+
+              <Link href="/student/jobs" className="text-primary-500 hover:text-primary-400 text-sm font-semibold">
+                View All →
+              </Link>
+            </div>
           </div>
           {loading ? (
             <div className="grid md:grid-cols-3 gap-4">

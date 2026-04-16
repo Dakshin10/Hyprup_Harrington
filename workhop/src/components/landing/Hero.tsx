@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const floatingCards = [
   { title: "Store Helper", pay: "₹450", time: "2 hrs", tag: "Urgent 🔥", color: "from-orange-500/20 to-orange-600/5" },
@@ -22,8 +23,25 @@ const cardVariants = {
 };
 
 export default function Hero() {
+  const router = useRouter();
+
+  const handleRoleSelect = (selectedRole: "student" | "business") => {
+    // Demo login logic for high conversion
+    const demoUser = {
+      uid: `demo-${selectedRole}`,
+      email: `${selectedRole}@demo.com`,
+      role: selectedRole
+    };
+    
+    // Use localStorage to simulate persistene for the MVP
+    localStorage.setItem("workhop_user_role", selectedRole);
+    localStorage.setItem("workhop_user", JSON.stringify(demoUser));
+    
+    router.push(`/${selectedRole}/dashboard`);
+  };
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 pt-24 pb-16">
+    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 pt-32 pb-16">
 
       {/* Animated gradient background */}
       <div className="absolute inset-0 -z-10">
@@ -57,58 +75,56 @@ export default function Hero() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary-500/30 bg-primary-500/10 text-primary-400 text-sm font-semibold"
           >
             <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-            🚀 Hiring in minutes, not days
+            📍 Hyperlocal Micro-Job Platform
           </motion.div>
 
           <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold text-text-primary leading-[1.1] tracking-tight">
-            Find Work.{" "}
+            Connect Students with <br />
             <span className="bg-gradient-to-r from-primary-500 via-orange-400 to-yellow-400 bg-clip-text text-transparent">
-              Hire Fast.
+              Nearby Work
             </span>
-            <br />
-            WorkHop.
+            {" — "}Instantly
           </h1>
 
           <p className="text-xl text-text-secondary max-w-lg leading-relaxed">
-            Connect college students with nearby businesses for quick, flexible jobs.{" "}
-            <span className="text-text-primary font-semibold">1–3 hours. Right now.</span>
+            Businesses post short jobs. <span className="text-text-primary font-semibold">Students discover and earn within minutes.</span>
           </p>
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-4">
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold rounded-2xl shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 transition-shadow text-lg"
-              >
-                Get Started →
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <a
-                href="#features"
-                className="inline-flex items-center gap-2 px-8 py-4 border border-white/15 text-text-secondary hover:text-text-primary hover:border-white/30 font-semibold rounded-2xl transition text-lg backdrop-blur-sm"
-              >
-                Explore Jobs ↓
-              </a>
-            </motion.div>
+            <motion.button 
+              whileHover={{ scale: 1.04 }} 
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleRoleSelect("business")}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-extrabold rounded-2xl shadow-xl shadow-white/5 hover:bg-slate-100 transition-all text-lg"
+            >
+              I'm a Business →
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.04 }} 
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleRoleSelect("student")}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-primary-500 text-white font-extrabold rounded-2xl shadow-xl shadow-primary-500/30 hover:bg-primary-600 transition-all text-lg"
+            >
+              I'm a Student →
+            </motion.button>
           </div>
 
           {/* Social proof */}
           <div className="flex items-center gap-6 text-sm text-text-muted pt-2">
             <div className="flex items-center gap-2">
               <span className="text-success-text font-bold text-base">500+</span>
+              <span>Jobs Posted</span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
+            <div className="flex items-center gap-2">
+              <span className="text-primary-500 font-bold text-base">1.2K</span>
               <span>Students</span>
             </div>
             <div className="w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2">
-              <span className="text-primary-500 font-bold text-base">120+</span>
-              <span>Businesses</span>
-            </div>
-            <div className="w-px h-4 bg-white/10" />
-            <div className="flex items-center gap-2">
-              <span className="text-warning-text font-bold text-base">2h</span>
-              <span>Avg. hire time</span>
+              <span className="text-warning-text font-bold text-base">&lt;5 min</span>
+              <span>Hiring Time</span>
             </div>
           </div>
         </motion.div>

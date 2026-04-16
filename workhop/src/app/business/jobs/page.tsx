@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { repostJob } from "@/services/jobService";
 import { getUserProfile } from "@/services/userService";
+import type { Job } from "@/types/job";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper } from "@/components/MotionWrappers";
@@ -49,7 +50,7 @@ const WorkerCell = memo(function WorkerCell({ uid }: { uid: string }) {
 });
 
 // ─── JOB CARD ────────────────────────────────────────────────────────────────
-const JobCard = memo(function JobCard({ job, onRepost }: { job: any; onRepost: (job: any) => void }) {
+const JobCard = memo(function JobCard({ job, onRepost }: { job: Job; onRepost: (job: Job) => void }) {
   return (
     <motion.div
       layout
@@ -114,7 +115,7 @@ export default function BusinessJobsPage() {
   const [filter, setFilter] = useState("all");
 
   // ─── Repost handler ───────────────────────────────────────────────────────
-  const handleRepost = useCallback(async (job: any) => {
+  const handleRepost = useCallback(async (job: Job) => {
     try {
       const newJob = await repostJob(job.jobId);
       setJobs([newJob, ...jobs]);
